@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import com.rajesh.realestatecrm.repository.PropertyRepository;
 import com.rajesh.realestatecrm.model.Property;
+import com.rajesh.realestatecrm.exception.ResourceNotFoundException;
+
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +23,16 @@ public class PropertyService {
     }
 
     public void delete(Long id) {
-        repository.deleteById(id);
+        Property existing = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found with id: " + id));
+
+        repository.delete(existing);
     }
+
 
     public Property update(Long id, Property property) {
         Property existing = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Property not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found with id: " + id));
 
         existing.setTitle(property.getTitle());
         existing.setLocation(property.getLocation());
