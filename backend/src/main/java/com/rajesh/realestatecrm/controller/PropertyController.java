@@ -24,6 +24,11 @@ public class PropertyController {
         return service.getAll();
     }
 
+    @PutMapping("/{id}")
+    public Property update(@PathVariable Long id, @RequestBody Property property) {
+        return service.update(id, property);
+    }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);

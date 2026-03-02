@@ -23,4 +23,17 @@ public class PropertyService {
     public void delete(Long id) {
         repository.deleteById(id);
     }
+
+    public Property update(Long id, Property property) {
+        Property existing = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+
+        existing.setTitle(property.getTitle());
+        existing.setLocation(property.getLocation());
+        existing.setPrice(property.getPrice());
+        existing.setType(property.getType());
+        existing.setStatus(property.getStatus());
+
+        return repository.save(existing);
+    }
 }
