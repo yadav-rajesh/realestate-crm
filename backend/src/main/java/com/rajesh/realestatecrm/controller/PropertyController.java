@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import com.rajesh.realestatecrm.model.Property;
 import com.rajesh.realestatecrm.service.PropertyService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -15,7 +16,7 @@ public class PropertyController {
     private final PropertyService service;
 
     @PostMapping
-    public Property create(@RequestBody Property property) {
+    public Property create(@Valid @RequestBody Property property) {
         return service.save(property);
     }
 
@@ -25,7 +26,7 @@ public class PropertyController {
     }
 
     @PutMapping("/{id}")
-    public Property update(@PathVariable Long id, @RequestBody Property property) {
+    public Property update(@PathVariable Long id, @Valid @RequestBody Property property) {
         return service.update(id, property);
     }
 

@@ -1,6 +1,8 @@
 package com.rajesh.realestatecrm.model;
+
 import jakarta.persistence.*;
 import lombok.*;
+import jakarta.validation.constraints.*;
 
 @Entity
 @Getter
@@ -13,9 +15,18 @@ public class Property {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Title is required")
     private String title;
+
+    @NotBlank(message = "Location is required")
     private String location;
+
+    @Positive(message = "Price must be greater than 0")
     private double price;
-    private String type;   // Flat, Villa, Plot
-    private String status; // Available, Sold
+
+    @NotBlank(message = "Type is required")
+    private String type;
+
+    @NotBlank(message = "Status is required")
+    private String status;
 }
