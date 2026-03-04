@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import API from "./api/axiosConfig";
 
 function App() {
+
+  // ================= STATE =================
   const [properties, setProperties] = useState([]);
 
   const [title, setTitle] = useState("");
@@ -14,57 +16,65 @@ function App() {
   const [password, setPassword] = useState("");
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState("");
 
-  // ✅ Check if token exists on load
+  // ================= LOAD ON REFRESH =================
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const storedRole = localStorage.getItem("role");
+
     if (token) {
       setIsLoggedIn(true);
+      setRole(storedRole);
       fetchProperties();
     }
   }, []);
 
-  // ✅ LOGIN
+  // ================= LOGIN =================
   const handleLogin = async () => {
     try {
       const response = await API.post("/auth/login", {
-        username: username,
-        password: password,
+        username,
+        password,
       });
 
-      console.log("Login Response:", response.data);
-
-      const token = response.data.token;
+      const { token, role } = response.data;
 
       if (!token) {
-        alert("No token received from backend");
+        alert(response.data.message || "Login failed");
         return;
       }
 
       localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+
       setIsLoggedIn(true);
+      setRole(role);
 
       alert("Login Successful ✅");
       fetchProperties();
+
     } catch (error) {
-      console.error("Full Login Error:", error);
-      alert(error.response?.data || "Invalid credentials");
+      console.error("Login Error:", error);
+      alert(error.response?.data?.message || "Invalid credentials");
     }
   };
 
-  // ✅ FETCH PROPERTIES
+  // ================= FETCH PROPERTIES =================
   const fetchProperties = async () => {
     try {
       const response = await API.get("/api/properties");
       setProperties(response.data);
     } catch (error) {
       console.error("Fetch Error:", error);
+      alert("Unauthorized or token expired");
     }
   };
 
-  // ✅ ADD OR UPDATE PROPERTY
+  // ================= ADD / UPDATE =================
   const handleSubmit = async () => {
     try {
+
       if (editingId) {
         await API.put(`/api/properties/${editingId}`, {
           title,
@@ -85,32 +95,38 @@ function App() {
       setPrice("");
 
       fetchProperties();
+
     } catch (error) {
       console.error("Save Error:", error);
+      alert("Error saving property");
     }
   };
 
-  // ✅ DELETE PROPERTY
+  // ================= DELETE =================
   const handleDelete = async (id) => {
     try {
       await API.delete(`/api/properties/${id}`);
       fetchProperties();
     } catch (error) {
       console.error("Delete Error:", error);
+      alert("Only ADMIN can delete");
     }
   };
 
-  // ✅ LOGOUT
+  // ================= LOGOUT =================
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
+
     setIsLoggedIn(false);
+    setRole("");
     setProperties([]);
   };
 
-  // 🔐 LOGIN UI
+  // ================= LOGIN UI =================
   if (!isLoggedIn) {
     return (
-      <div style={{ padding: "20px" }}>
+      <div style={{ padding: "30px" }}>
         <h2>Login</h2>
 
         <input
@@ -136,16 +152,20 @@ function App() {
     );
   }
 
-  // 🏠 MAIN APP
+  // ================= MAIN UI =================
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "30px" }}>
       <h2>Real Estate CRM</h2>
+
+      <p>
+        Logged in as: <b>{role}</b>
+      </p>
 
       <button onClick={handleLogout}>Logout</button>
 
       <hr />
 
-      <h3>Add / Update Property</h3>
+      <h3>{editingId ? "Update Property" : "Add Property"}</h3>
 
       <input
         type="text"
@@ -177,9 +197,8 @@ function App() {
       <h3>Properties</h3>
 
       {properties.map((property) => (
-        <div key={property.id} style={{ marginBottom: "10px" }}>
-          <b>{property.title}</b> - {property.location} - ₹{property.price}
-
+        <div key={property.id} style={{ marginBottom: "15px" }}>
+          <b>{property.title}</b> — {property.location} — ₹{property.price}
           <br />
 
           <button
@@ -193,9 +212,15 @@ function App() {
             Edit
           </button>
 
-          <button onClick={() => handleDelete(property.id)}>
-            Delete
-          </button>
+          {/* ROLE BASED DELETE */}
+          {role === "ADMIN" && (
+            <button
+              style={{ marginLeft: "10px" }}
+              onClick={() => handleDelete(property.id)}
+            >
+              Delete
+            </button>
+          )}
         </div>
       ))}
     </div>
