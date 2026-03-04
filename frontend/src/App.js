@@ -31,34 +31,64 @@ function App() {
   }, []);
 
   // ================= LOGIN =================
+  // const handleLogin = async () => {
+  //   try {
+  //     const response = await API.post("/auth/login", {
+  //       username,
+  //       password,
+  //     });
+
+  //     const { token, role } = response.data;
+
+  //     if (!token) {
+  //       alert(response.data.message || "Login failed");
+  //       return;
+  //     }
+
+  //     localStorage.setItem("token", token);
+  //     localStorage.setItem("role", role);
+
+  //     setIsLoggedIn(true);
+  //     setRole(role);
+
+  //     alert("Login Successful ✅");
+  //     fetchProperties();
+
+  //   } catch (error) {
+  //     console.error("Login Error:", error);
+  //     alert(error.response?.data?.message || "Invalid credentials");
+  //   }
+  // };
   const handleLogin = async () => {
-    try {
-      const response = await API.post("/auth/login", {
-        username,
-        password,
-      });
+  try {
+    const response = await API.post("/auth/login", {
+      username,
+      password,
+    });
 
-      const { token, role } = response.data;
+    let { token, role } = response.data;
 
-      if (!token) {
-        alert(response.data.message || "Login failed");
-        return;
-      }
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
-
-      setIsLoggedIn(true);
-      setRole(role);
-
-      alert("Login Successful ✅");
-      fetchProperties();
-
-    } catch (error) {
-      console.error("Login Error:", error);
-      alert(error.response?.data?.message || "Invalid credentials");
+    if (!token) {
+      alert(response.data.message || "Login failed");
+      return;
     }
-  };
+
+    // 🔥 Normalize role
+    if (role.startsWith("ROLE_")) {
+      role = role.replace("ROLE_", "");
+    }
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role);
+
+    setIsLoggedIn(true);
+    setRole(role);
+
+    fetchProperties();
+  } catch (error) {
+    alert("Invalid credentials");
+  }
+};
 
   // ================= FETCH PROPERTIES =================
   const fetchProperties = async () => {
