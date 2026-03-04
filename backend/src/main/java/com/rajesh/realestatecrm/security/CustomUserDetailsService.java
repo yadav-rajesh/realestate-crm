@@ -25,10 +25,11 @@ public class CustomUserDetailsService implements UserDetailsService {
             role = "ADMIN";  // default role
         }
 
+
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
-                .roles(role)
+                .authorities("ROLE_" + role.toUpperCase())
                 .build();
     }
 }
