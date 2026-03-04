@@ -1,102 +1,199 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "./api/axiosConfig";
 
 function App() {
   const [properties, setProperties] = useState([]);
+
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [price, setPrice] = useState("");
+
   const [editingId, setEditingId] = useState(null);
 
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // ✅ Check if token exists on load
   useEffect(() => {
-    fetchProperties();
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLoggedIn(true);
+      fetchProperties();
+    }
   }, []);
 
-  const fetchProperties = async () => {
-    const res = await axios.get("http://localhost:8080/api/properties");
-    setProperties(res.data);
-  };
+  // ✅ LOGIN
+  const handleLogin = async () => {
+    try {
+      const response = await API.post("/auth/login", {
+        username: username,
+        password: password,
+      });
 
-  const addOrUpdateProperty = async () => {
-    if (editingId) {
-      // UPDATE
-      await axios.put(`http://localhost:8080/api/properties/${editingId}`, {
-        title,
-        location,
-        price,
-        type: "Flat",
-        status: "Available"
-      });
-      setEditingId(null);
-    } else {
-      // CREATE
-      await axios.post("http://localhost:8080/api/properties", {
-        title,
-        location,
-        price,
-        type: "Flat",
-        status: "Available"
-      });
+      console.log("Login Response:", response.data);
+
+      const token = response.data.token;
+
+      if (!token) {
+        alert("No token received from backend");
+        return;
+      }
+
+      localStorage.setItem("token", token);
+      setIsLoggedIn(true);
+
+      alert("Login Successful ✅");
+      fetchProperties();
+    } catch (error) {
+      console.error("Full Login Error:", error);
+      alert(error.response?.data || "Invalid credentials");
     }
-
-    setTitle("");
-    setLocation("");
-    setPrice("");
-    fetchProperties();
   };
 
-  const deleteProperty = async (id) => {
-    await axios.delete(`http://localhost:8080/api/properties/${id}`);
-    fetchProperties();
+  // ✅ FETCH PROPERTIES
+  const fetchProperties = async () => {
+    try {
+      const response = await API.get("/api/properties");
+      setProperties(response.data);
+    } catch (error) {
+      console.error("Fetch Error:", error);
+    }
   };
 
-  const editProperty = (property) => {
-    setTitle(property.title);
-    setLocation(property.location);
-    setPrice(property.price);
-    setEditingId(property.id);
+  // ✅ ADD OR UPDATE PROPERTY
+  const handleSubmit = async () => {
+    try {
+      if (editingId) {
+        await API.put(`/api/properties/${editingId}`, {
+          title,
+          location,
+          price,
+        });
+        setEditingId(null);
+      } else {
+        await API.post("/api/properties", {
+          title,
+          location,
+          price,
+        });
+      }
+
+      setTitle("");
+      setLocation("");
+      setPrice("");
+
+      fetchProperties();
+    } catch (error) {
+      console.error("Save Error:", error);
+    }
   };
 
+  // ✅ DELETE PROPERTY
+  const handleDelete = async (id) => {
+    try {
+      await API.delete(`/api/properties/${id}`);
+      fetchProperties();
+    } catch (error) {
+      console.error("Delete Error:", error);
+    }
+  };
+
+  // ✅ LOGOUT
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setProperties([]);
+  };
+
+  // 🔐 LOGIN UI
+  if (!isLoggedIn) {
+    return (
+      <div style={{ padding: "20px" }}>
+        <h2>Login</h2>
+
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+
+        <br /><br />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <br /><br />
+
+        <button onClick={handleLogin}>Login</button>
+      </div>
+    );
+  }
+
+  // 🏠 MAIN APP
   return (
     <div style={{ padding: "20px" }}>
-      <h2>{editingId ? "Update Property" : "Add Property"}</h2>
+      <h2>Real Estate CRM</h2>
+
+      <button onClick={handleLogout}>Logout</button>
+
+      <hr />
+
+      <h3>Add / Update Property</h3>
 
       <input
+        type="text"
         placeholder="Title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
-      <br /><br />
 
       <input
+        type="text"
         placeholder="Location"
         value={location}
         onChange={(e) => setLocation(e.target.value)}
       />
-      <br /><br />
 
       <input
+        type="number"
         placeholder="Price"
         value={price}
         onChange={(e) => setPrice(e.target.value)}
       />
-      <br /><br />
 
-      <button onClick={addOrUpdateProperty}>
+      <button onClick={handleSubmit}>
         {editingId ? "Update" : "Add"}
       </button>
 
       <hr />
 
-      <h2>Property List</h2>
+      <h3>Properties</h3>
 
-      {properties.map((p) => (
-        <div key={p.id} style={{ marginBottom: "10px" }}>
-          {p.title} - {p.location} - ₹{p.price}
-          <button onClick={() => editProperty(p)} style={{ marginLeft: "10px" }}>
+      {properties.map((property) => (
+        <div key={property.id} style={{ marginBottom: "10px" }}>
+          <b>{property.title}</b> - {property.location} - ₹{property.price}
+
+          <br />
+
+          <button
+            onClick={() => {
+              setEditingId(property.id);
+              setTitle(property.title);
+              setLocation(property.location);
+              setPrice(property.price);
+            }}
+          >
             Edit
           </button>
-          <button onClick={() => deleteProperty(p.id)} style={{ marginLeft: "10px" }}>
+
+          <button onClick={() => handleDelete(property.id)}>
             Delete
           </button>
         </div>

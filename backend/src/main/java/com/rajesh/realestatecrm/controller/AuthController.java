@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -33,28 +34,57 @@ public class AuthController {
         return "User Registered Successfully";
     }
 
-    // Login
+//    // Login
+//    @PostMapping("/login")
+//    public String login(@RequestBody User user) {
+//
+//        if (user.getUsername() == null || user.getPassword() == null) {
+//            return "Username or Password missing";
+//        }
+//
+//        Optional<User> existingUser =
+//                userRepository.findByUsername(user.getUsername());
+//
+//        if (existingUser.isEmpty()) {
+//            return "User not found";
+//        }
+//
+//        if (!passwordEncoder.matches(
+//                user.getPassword(),
+//                existingUser.get().getPassword())) {
+//
+//            return "Invalid password";
+//        }
+//
+//        return jwtUtil.generateToken(existingUser.get().getUsername());
+//    }
+
     @PostMapping("/login")
-    public String login(@RequestBody User user) {
+    public Map<String, String> login(@RequestBody User user) {
 
         if (user.getUsername() == null || user.getPassword() == null) {
-            return "Username or Password missing";
+            return Map.of("message", "Username or Password missing");
         }
 
         Optional<User> existingUser =
                 userRepository.findByUsername(user.getUsername());
 
         if (existingUser.isEmpty()) {
-            return "User not found";
+            return Map.of("message", "User not found");
         }
 
         if (!passwordEncoder.matches(
                 user.getPassword(),
                 existingUser.get().getPassword())) {
 
-            return "Invalid password";
+            return Map.of("message", "Invalid password");
         }
 
-        return jwtUtil.generateToken(existingUser.get().getUsername());
+        String token = jwtUtil.generateToken(existingUser.get().getUsername());
+
+        return Map.of(
+                "token", token,
+                "role", existingUser.get().getRole()
+        );
     }
 }
