@@ -1,6 +1,8 @@
 package com.rajesh.realestatecrm.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 import com.rajesh.realestatecrm.repository.PropertyRepository;
@@ -20,6 +22,10 @@ public class PropertyService {
 
     public List<Property> getAll() {
         return repository.findAll();
+    }
+
+    public Page<Property> getAll(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     public void delete(Long id) {

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import API from "./api/axiosConfig";
 
 function App() {
-
   // ================= STATE =================
   const [properties, setProperties] = useState([]);
 
@@ -18,6 +17,9 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   // ================= LOAD ON REFRESH =================
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -26,7 +28,7 @@ function App() {
     if (token) {
       setIsLoggedIn(true);
       setRole(storedRole);
-      fetchProperties();
+      fetchProperties(0);
     }
   }, []);
 
@@ -60,51 +62,67 @@ function App() {
   //   }
   // };
   const handleLogin = async () => {
-  try {
-    const response = await API.post("/auth/login", {
-      username,
-      password,
-    });
-
-    let { token, role } = response.data;
-
-    if (!token) {
-      alert(response.data.message || "Login failed");
-      return;
-    }
-
-    // 🔥 Normalize role
-    if (role.startsWith("ROLE_")) {
-      role = role.replace("ROLE_", "");
-    }
-
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
-
-    setIsLoggedIn(true);
-    setRole(role);
-
-    fetchProperties();
-  } catch (error) {
-    alert("Invalid credentials");
-  }
-};
-
-  // ================= FETCH PROPERTIES =================
-  const fetchProperties = async () => {
     try {
-      const response = await API.get("/api/properties");
-      setProperties(response.data);
+      const response = await API.post("/auth/login", {
+        username,
+        password,
+      });
+
+      let { token, role } = response.data;
+
+      if (!token) {
+        alert(response.data.message || "Login failed");
+        return;
+      }
+
+      // 🔥 Normalize role
+      if (role.startsWith("ROLE_")) {
+        role = role.replace("ROLE_", "");
+      }
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+
+      setIsLoggedIn(true);
+      setRole(role);
+
+      fetchProperties();
     } catch (error) {
-      console.error("Fetch Error:", error);
-      alert("Unauthorized or token expired");
+      alert("Invalid credentials");
     }
   };
+
+  // ================= FETCH PROPERTIES =================
+  // const fetchProperties = async () => {
+  //   try {
+  //     const response = await API.get("/api/properties");
+  //     setProperties(response.data);
+  //   } catch (error) {
+  //     console.error("Fetch Error:", error);
+  //     alert("Unauthorized or token expired");
+  //   }
+  // };
+  const fetchProperties = async (page = 0) => {
+  try {
+    const response = await API.get(`/api/properties?page=${page}&size=5`);
+
+    console.log("Pagination Response:", response.data);
+
+    setProperties(response.data.content);
+
+    // important
+    setTotalPages(response.data.totalPages || 1);
+
+    setCurrentPage(response.data.number);
+
+  } catch (error) {
+    console.error("Fetch Error:", error);
+  }
+};
 
   // ================= ADD / UPDATE =================
   const handleSubmit = async () => {
     try {
-
       if (editingId) {
         await API.put(`/api/properties/${editingId}`, {
           title,
@@ -125,7 +143,6 @@ function App() {
       setPrice("");
 
       fetchProperties();
-
     } catch (error) {
       console.error("Save Error:", error);
       alert("Error saving property");
@@ -166,7 +183,8 @@ function App() {
           onChange={(e) => setUsername(e.target.value)}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
         <input
           type="password"
@@ -175,7 +193,8 @@ function App() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
         <button onClick={handleLogin}>Login</button>
       </div>
@@ -218,9 +237,7 @@ function App() {
         onChange={(e) => setPrice(e.target.value)}
       />
 
-      <button onClick={handleSubmit}>
-        {editingId ? "Update" : "Add"}
-      </button>
+      <button onClick={handleSubmit}>{editingId ? "Update" : "Add"}</button>
 
       <hr />
 
@@ -230,7 +247,6 @@ function App() {
         <div key={property.id} style={{ marginBottom: "15px" }}>
           <b>{property.title}</b> — {property.location} — ₹{property.price}
           <br />
-
           <button
             onClick={() => {
               setEditingId(property.id);
@@ -241,7 +257,6 @@ function App() {
           >
             Edit
           </button>
-
           {/* ROLE BASED DELETE */}
           {role === "ADMIN" && (
             <button
@@ -253,6 +268,29 @@ function App() {
           )}
         </div>
       ))}
+
+      <hr />
+
+      <h3>Pages</h3>
+
+      <button
+        disabled={currentPage === 0}
+        onClick={() => fetchProperties(currentPage - 1)}
+      >
+        Previous
+      </button>
+
+      <span style={{ margin: "0 10px" }}>
+        {/* Page {currentPage + 1} of {totalPages} */}
+        Page {totalPages === 0 ? 0 : currentPage + 1} of {totalPages}
+      </span>
+
+      <button
+        disabled={currentPage + 1 === totalPages}
+        onClick={() => fetchProperties(currentPage + 1)}
+      >
+        Next
+      </button>
     </div>
   );
 }

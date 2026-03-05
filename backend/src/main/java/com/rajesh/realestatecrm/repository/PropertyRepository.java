@@ -1,7 +1,9 @@
 package com.rajesh.realestatecrm.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import com.rajesh.realestatecrm.model.Property;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface PropertyRepository extends JpaRepository<Property, Long> {
 }
