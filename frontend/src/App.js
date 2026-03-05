@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import API from "./api/axiosConfig";
 
 function App() {
+
   // ================= STATE =================
   const [properties, setProperties] = useState([]);
 
@@ -20,8 +21,12 @@ function App() {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  const [searchLocation, setSearchLocation] = useState("");
+
+
   // ================= LOAD ON REFRESH =================
   useEffect(() => {
+
     const token = localStorage.getItem("token");
     const storedRole = localStorage.getItem("role");
 
@@ -30,39 +35,15 @@ function App() {
       setRole(storedRole);
       fetchProperties(0);
     }
+
   }, []);
 
+
   // ================= LOGIN =================
-  // const handleLogin = async () => {
-  //   try {
-  //     const response = await API.post("/auth/login", {
-  //       username,
-  //       password,
-  //     });
-
-  //     const { token, role } = response.data;
-
-  //     if (!token) {
-  //       alert(response.data.message || "Login failed");
-  //       return;
-  //     }
-
-  //     localStorage.setItem("token", token);
-  //     localStorage.setItem("role", role);
-
-  //     setIsLoggedIn(true);
-  //     setRole(role);
-
-  //     alert("Login Successful ✅");
-  //     fetchProperties();
-
-  //   } catch (error) {
-  //     console.error("Login Error:", error);
-  //     alert(error.response?.data?.message || "Invalid credentials");
-  //   }
-  // };
   const handleLogin = async () => {
+
     try {
+
       const response = await API.post("/auth/login", {
         username,
         password,
@@ -75,7 +56,6 @@ function App() {
         return;
       }
 
-      // 🔥 Normalize role
       if (role.startsWith("ROLE_")) {
         role = role.replace("ROLE_", "");
       }
@@ -86,94 +66,145 @@ function App() {
       setIsLoggedIn(true);
       setRole(role);
 
-      fetchProperties();
+      fetchProperties(0);
+
     } catch (error) {
+
       alert("Invalid credentials");
+
     }
   };
 
+
   // ================= FETCH PROPERTIES =================
-  // const fetchProperties = async () => {
-  //   try {
-  //     const response = await API.get("/api/properties");
-  //     setProperties(response.data);
-  //   } catch (error) {
-  //     console.error("Fetch Error:", error);
-  //     alert("Unauthorized or token expired");
-  //   }
-  // };
   const fetchProperties = async (page = 0) => {
-  try {
-    const response = await API.get(`/api/properties?page=${page}&size=5`);
 
-    console.log("Pagination Response:", response.data);
+    try {
 
-    setProperties(response.data.content);
+      const response = await API.get(
+        `/api/properties?page=${page}&size=5`
+      );
 
-    // important
-    setTotalPages(response.data.totalPages || 1);
+      setProperties(response.data.content);
+      setTotalPages(response.data.totalPages || 1);
+      setCurrentPage(response.data.number);
 
-    setCurrentPage(response.data.number);
+    } catch (error) {
 
-  } catch (error) {
-    console.error("Fetch Error:", error);
-  }
-};
+      console.error("Fetch Error:", error);
+
+    }
+  };
+
+
+  // ================= SEARCH =================
+  const searchProperties = async (page = 0) => {
+
+    try {
+
+      const response = await API.get(
+        `/api/properties/search?location=${searchLocation}&page=${page}&size=5`
+      );
+
+      setProperties(response.data.content);
+      setTotalPages(response.data.totalPages || 1);
+      setCurrentPage(response.data.number);
+
+    } catch (error) {
+
+      console.error("Search Error:", error);
+
+    }
+  };
+
 
   // ================= ADD / UPDATE =================
   const handleSubmit = async () => {
+
     try {
+
       if (editingId) {
+
         await API.put(`/api/properties/${editingId}`, {
           title,
           location,
           price,
         });
+
         setEditingId(null);
+
       } else {
+
         await API.post("/api/properties", {
           title,
           location,
           price,
         });
+
       }
 
       setTitle("");
       setLocation("");
       setPrice("");
 
-      fetchProperties();
+      fetchProperties(currentPage);
+
     } catch (error) {
+
       console.error("Save Error:", error);
       alert("Error saving property");
+
     }
   };
+
 
   // ================= DELETE =================
   const handleDelete = async (id) => {
+
     try {
+
       await API.delete(`/api/properties/${id}`);
-      fetchProperties();
+
+      fetchProperties(currentPage);
+
     } catch (error) {
+
       console.error("Delete Error:", error);
       alert("Only ADMIN can delete");
+
     }
   };
 
+
+  // ================= CLEAR SEARCH =================
+  const clearSearch = () => {
+
+    setSearchLocation("");
+    fetchProperties(0);
+
+  };
+
+
   // ================= LOGOUT =================
   const handleLogout = () => {
+
     localStorage.removeItem("token");
     localStorage.removeItem("role");
 
     setIsLoggedIn(false);
     setRole("");
     setProperties([]);
+
   };
+
 
   // ================= LOGIN UI =================
   if (!isLoggedIn) {
+
     return (
+
       <div style={{ padding: "30px" }}>
+
         <h2>Login</h2>
 
         <input
@@ -197,13 +228,19 @@ function App() {
         <br />
 
         <button onClick={handleLogin}>Login</button>
+
       </div>
+
     );
+
   }
+
 
   // ================= MAIN UI =================
   return (
+
     <div style={{ padding: "30px" }}>
+
       <h2>Real Estate CRM</h2>
 
       <p>
@@ -213,6 +250,9 @@ function App() {
       <button onClick={handleLogout}>Logout</button>
 
       <hr />
+
+
+      {/* ADD / UPDATE PROPERTY */}
 
       <h3>{editingId ? "Update Property" : "Add Property"}</h3>
 
@@ -237,16 +277,47 @@ function App() {
         onChange={(e) => setPrice(e.target.value)}
       />
 
-      <button onClick={handleSubmit}>{editingId ? "Update" : "Add"}</button>
+      <button onClick={handleSubmit}>
+        {editingId ? "Update" : "Add"}
+      </button>
 
       <hr />
+
+
+      {/* SEARCH */}
+
+      <div style={{ marginBottom: "20px" }}>
+
+        <input
+          type="text"
+          placeholder="Search by location"
+          value={searchLocation}
+          onChange={(e) => setSearchLocation(e.target.value)}
+        />
+
+        <button onClick={() => searchProperties(0)}>
+          Search
+        </button>
+
+        <button onClick={clearSearch}>
+          Clear
+        </button>
+
+      </div>
+
+
+      {/* PROPERTY LIST */}
 
       <h3>Properties</h3>
 
       {properties.map((property) => (
+
         <div key={property.id} style={{ marginBottom: "15px" }}>
+
           <b>{property.title}</b> — {property.location} — ₹{property.price}
+
           <br />
+
           <button
             onClick={() => {
               setEditingId(property.id);
@@ -257,42 +328,59 @@ function App() {
           >
             Edit
           </button>
-          {/* ROLE BASED DELETE */}
+
           {role === "ADMIN" && (
+
             <button
               style={{ marginLeft: "10px" }}
               onClick={() => handleDelete(property.id)}
             >
               Delete
             </button>
+
           )}
+
         </div>
+
       ))}
 
       <hr />
+
+
+      {/* PAGINATION */}
 
       <h3>Pages</h3>
 
       <button
         disabled={currentPage === 0}
-        onClick={() => fetchProperties(currentPage - 1)}
+        onClick={() =>
+          searchLocation
+            ? searchProperties(currentPage - 1)
+            : fetchProperties(currentPage - 1)
+        }
       >
         Previous
       </button>
 
       <span style={{ margin: "0 10px" }}>
-        {/* Page {currentPage + 1} of {totalPages} */}
         Page {totalPages === 0 ? 0 : currentPage + 1} of {totalPages}
       </span>
 
       <button
         disabled={currentPage + 1 === totalPages}
-        onClick={() => fetchProperties(currentPage + 1)}
+        onClick={() =>
+          searchLocation
+            ? searchProperties(currentPage + 1)
+            : fetchProperties(currentPage + 1)
+        }
       >
         Next
       </button>
+
     </div>
+
   );
+
 }
 
 export default App;

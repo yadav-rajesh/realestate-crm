@@ -48,4 +48,9 @@ public class PropertyService {
 
         return repository.save(existing);
     }
+
+    public Page<Property> searchByLocation(String location, Pageable pageable) {
+        return repository.findByLocationContainingIgnoreCase(location, pageable);
+    }
+
 }

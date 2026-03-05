@@ -2,13 +2,14 @@ package com.rajesh.realestatecrm.controller;
 
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
-import java.util.List;
 import com.rajesh.realestatecrm.model.Property;
 import com.rajesh.realestatecrm.service.PropertyService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -34,6 +35,17 @@ public class PropertyController {
 
         Pageable pageable = PageRequest.of(page, size);
         return service.getAll(pageable);
+    }
+
+    // SEARCH API
+    @GetMapping("/search")
+    public Page<Property> searchProperties(
+            @RequestParam String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return service.searchByLocation(location, pageable);
     }
 
     @PutMapping("/{id}")
