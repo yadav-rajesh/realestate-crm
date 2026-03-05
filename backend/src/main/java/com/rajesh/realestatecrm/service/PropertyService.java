@@ -68,4 +68,9 @@ public class PropertyService {
                 locations
         );
     }
+
+    public Page<Property> filterByType(String type, Pageable pageable) {
+        return propertyRepository.findByType(type, pageable);
+    }
+
 }

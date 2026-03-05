@@ -17,4 +17,6 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
 
     @Query("SELECT COUNT(DISTINCT p.location) FROM Property p")
     Long countDistinctLocations();
+
+    Page<Property> findByType(String type, Pageable pageable);
 }

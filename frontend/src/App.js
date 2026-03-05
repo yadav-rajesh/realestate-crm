@@ -26,6 +26,8 @@ function App() {
   const [sortBy, setSortBy] = useState("id");
   const [direction, setDirection] = useState("asc");
 
+  const [filterType, setFilterType] = useState("");
+
 
   // ================= DASHBOARD STATE =================
   const [totalProperties, setTotalProperties] = useState(0);
@@ -225,6 +227,26 @@ function App() {
   };
 
 
+  // ================= filter =================
+  const filterByType = async (type) => {
+
+    try {
+
+      const response = await API.get(
+        `/api/properties/type?type=${type}&page=0&size=5`
+      );
+
+      setProperties(response.data.content);
+      setTotalPages(response.data.totalPages);
+      setCurrentPage(response.data.number);
+
+    } catch (error) {
+      console.error("Filter Error:", error);
+    }
+
+  };
+
+
   // ================= LOGIN UI =================
   if (!isLoggedIn) {
 
@@ -371,6 +393,21 @@ function App() {
         Price High → Low
       </button>
 
+      <h3>Filter By Type</h3>
+
+      <button onClick={() => fetchProperties(0)}>All</button>
+
+      <button onClick={() => filterByType("Flat")}>
+        Flat
+      </button>
+
+      <button onClick={() => filterByType("Villa")}>
+        Villa
+      </button>
+
+      <button onClick={() => filterByType("Plot")}>
+        Plot
+      </button>
 
       {/* PROPERTY LIST */}
 

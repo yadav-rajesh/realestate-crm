@@ -51,6 +51,16 @@ public class PropertyController {
         return service.getAll(pageable);
     }
 
+    @GetMapping("/type")
+    public Page<Property> filterByType(
+            @RequestParam String type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        return service.filterByType(type, pageable);
+    }
+
     @PutMapping("/{id}")
     public Property update(@PathVariable Long id, @Valid @RequestBody Property property) {
         return service.update(id, property);
