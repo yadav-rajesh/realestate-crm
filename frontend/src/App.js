@@ -23,6 +23,9 @@ function App() {
 
   const [searchLocation, setSearchLocation] = useState("");
 
+  const [sortBy, setSortBy] = useState("id");
+  const [direction, setDirection] = useState("asc");
+
 
   // ================= LOAD ON REFRESH =================
   useEffect(() => {
@@ -82,7 +85,7 @@ function App() {
     try {
 
       const response = await API.get(
-        `/api/properties?page=${page}&size=5`
+        `/api/properties?page=${page}&size=5&sortBy=${sortBy}&direction=${direction}`
       );
 
       setProperties(response.data.content);
@@ -305,6 +308,31 @@ function App() {
 
       </div>
 
+      <h3>Sort</h3>
+
+      <button onClick={() => {
+        setSortBy("price");
+        setDirection("asc");
+        fetchProperties(0);
+      }}>
+        Price Low → High
+      </button>
+
+      <button onClick={() => {
+        setSortBy("price");
+        setDirection("desc");
+        fetchProperties(0);
+      }}>
+        Price High → Low
+      </button>
+
+      <button onClick={() => {
+        setSortBy("location");
+        setDirection("asc");
+        fetchProperties(0);
+      }}>
+        Location
+      </button>
 
       {/* PROPERTY LIST */}
 
