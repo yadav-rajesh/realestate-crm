@@ -27,6 +27,11 @@ function App() {
   const [direction, setDirection] = useState("asc");
 
 
+  // ================= DASHBOARD STATE =================
+  const [totalProperties, setTotalProperties] = useState(0);
+  const [averagePrice, setAveragePrice] = useState(0);
+
+
   // ================= LOAD ON REFRESH =================
   useEffect(() => {
 
@@ -88,9 +93,19 @@ function App() {
         `/api/properties?page=${page}&size=5&sortBy=${sortBy}&direction=${direction}`
       );
 
-      setProperties(response.data.content);
-      setTotalPages(response.data.totalPages || 1);
-      setCurrentPage(response.data.number);
+      const data = response.data;
+
+      setProperties(data.content);
+      setTotalPages(data.totalPages || 1);
+      setCurrentPage(data.number);
+
+      // DASHBOARD CALCULATIONS
+      setTotalProperties(data.totalElements);
+
+      const totalPrice = data.content.reduce((sum, p) => sum + p.price, 0);
+      const avg = data.content.length ? totalPrice / data.content.length : 0;
+
+      setAveragePrice(avg.toFixed(0));
 
     } catch (error) {
 
@@ -109,9 +124,18 @@ function App() {
         `/api/properties/search?location=${searchLocation}&page=${page}&size=5`
       );
 
-      setProperties(response.data.content);
-      setTotalPages(response.data.totalPages || 1);
-      setCurrentPage(response.data.number);
+      const data = response.data;
+
+      setProperties(data.content);
+      setTotalPages(data.totalPages || 1);
+      setCurrentPage(data.number);
+
+      setTotalProperties(data.totalElements);
+
+      const totalPrice = data.content.reduce((sum, p) => sum + p.price, 0);
+      const avg = data.content.length ? totalPrice / data.content.length : 0;
+
+      setAveragePrice(avg.toFixed(0));
 
     } catch (error) {
 
@@ -217,8 +241,7 @@ function App() {
           onChange={(e) => setUsername(e.target.value)}
         />
 
-        <br />
-        <br />
+        <br /><br />
 
         <input
           type="password"
@@ -227,8 +250,7 @@ function App() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <br />
-        <br />
+        <br /><br />
 
         <button onClick={handleLogin}>Login</button>
 
@@ -255,7 +277,33 @@ function App() {
       <hr />
 
 
-      {/* ADD / UPDATE PROPERTY */}
+      {/* ================= DASHBOARD ================= */}
+
+      <h3>Dashboard</h3>
+
+      <div style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
+
+        <div style={{ border: "1px solid gray", padding: "10px" }}>
+          <h4>Total Properties</h4>
+          <p>{totalProperties}</p>
+        </div>
+
+        <div style={{ border: "1px solid gray", padding: "10px" }}>
+          <h4>Average Price (Page)</h4>
+          <p>₹{averagePrice}</p>
+        </div>
+
+        <div style={{ border: "1px solid gray", padding: "10px" }}>
+          <h4>Properties in Page</h4>
+          <p>{properties.length}</p>
+        </div>
+
+      </div>
+
+      <hr />
+
+
+      {/* ADD PROPERTY */}
 
       <h3>{editingId ? "Update Property" : "Add Property"}</h3>
 
@@ -289,24 +337,21 @@ function App() {
 
       {/* SEARCH */}
 
-      <div style={{ marginBottom: "20px" }}>
+      <input
+        type="text"
+        placeholder="Search by location"
+        value={searchLocation}
+        onChange={(e) => setSearchLocation(e.target.value)}
+      />
 
-        <input
-          type="text"
-          placeholder="Search by location"
-          value={searchLocation}
-          onChange={(e) => setSearchLocation(e.target.value)}
-        />
+      <button onClick={() => searchProperties(0)}>Search</button>
 
-        <button onClick={() => searchProperties(0)}>
-          Search
-        </button>
+      <button onClick={clearSearch}>Clear</button>
 
-        <button onClick={clearSearch}>
-          Clear
-        </button>
+      <hr />
 
-      </div>
+
+      {/* SORT */}
 
       <h3>Sort</h3>
 
@@ -326,13 +371,6 @@ function App() {
         Price High → Low
       </button>
 
-      <button onClick={() => {
-        setSortBy("location");
-        setDirection("asc");
-        fetchProperties(0);
-      }}>
-        Location
-      </button>
 
       {/* PROPERTY LIST */}
 
