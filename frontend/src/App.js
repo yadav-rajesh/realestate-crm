@@ -10,6 +10,7 @@ function App() {
   const [location, setLocation] = useState("");
   const [price, setPrice] = useState("");
   const [status, setStatus] = useState("Available");
+  const [type, setType] = useState("Residential");
 
   const [file, setFile] = useState(null);
 
@@ -29,7 +30,6 @@ function App() {
   const [sortBy, setSortBy] = useState("id");
   const [direction, setDirection] = useState("asc");
 
-  // ================= DASHBOARD STATE =================
   const [totalProperties, setTotalProperties] = useState(0);
   const [averagePrice, setAveragePrice] = useState(0);
 
@@ -56,7 +56,7 @@ function App() {
 
       const response = await API.post("/auth/login", {
         username,
-        password,
+        password
       });
 
       let { token, role } = response.data;
@@ -73,7 +73,7 @@ function App() {
 
       fetchProperties(0);
 
-    } catch (error) {
+    } catch {
 
       alert("Invalid credentials");
 
@@ -93,15 +93,21 @@ function App() {
 
       const data = response.data;
 
-      setProperties(data.content);
+      setProperties(data.content || []);
       setTotalPages(data.totalPages || 1);
-      setCurrentPage(data.number);
+      setCurrentPage(data.number || 0);
 
-      // Dashboard
-      setTotalProperties(data.totalElements);
+      setTotalProperties(data.totalElements || 0);
 
-      const totalPrice = data.content.reduce((sum, p) => sum + p.price, 0);
-      const avg = data.content.length ? totalPrice / data.content.length : 0;
+      const totalPrice = (data.content || []).reduce(
+        (sum, p) => sum + Number(p.price),
+        0
+      );
+
+      const avg =
+        data.content && data.content.length
+          ? totalPrice / data.content.length
+          : 0;
 
       setAveragePrice(avg.toFixed(0));
 
@@ -150,8 +156,9 @@ function App() {
         response = await API.put(`/api/properties/${editingId}`, {
           title,
           location,
-          price,
-          status
+          price: Number(price),
+          status,
+          type
         });
 
         setEditingId(null);
@@ -161,15 +168,16 @@ function App() {
         response = await API.post("/api/properties", {
           title,
           location,
-          price,
-          status
+          price: Number(price),
+          status,
+          type
         });
 
       }
 
       const createdProperty = response.data;
 
-      // IMAGE UPLOAD
+      // ================= IMAGE UPLOAD =================
       if (file) {
 
         const formData = new FormData();
@@ -177,7 +185,12 @@ function App() {
 
         await API.post(
           `/api/properties/upload/${createdProperty.id}`,
-          formData
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          }
         );
 
       }
@@ -186,6 +199,7 @@ function App() {
       setLocation("");
       setPrice("");
       setStatus("Available");
+      setType("Residential");
       setFile(null);
 
       fetchProperties(currentPage);
@@ -208,11 +222,20 @@ function App() {
       await API.delete(`/api/properties/${id}`);
       fetchProperties(currentPage);
 
-    } catch (error) {
+    } catch {
 
       alert("Only ADMIN can delete");
 
     }
+
+  };
+
+
+  // ================= CLEAR SEARCH =================
+  const clearSearch = () => {
+
+    setSearchLocation("");
+    fetchProperties(0);
 
   };
 
@@ -228,7 +251,6 @@ function App() {
     setProperties([]);
 
   };
-
 
   // ================= LOGIN UI =================
   if (!isLoggedIn) {
@@ -339,6 +361,14 @@ function App() {
         <option>Sold</option>
       </select>
 
+      <select
+  value={type}
+  onChange={(e) => setType(e.target.value)}
+>
+  <option>Residential</option>
+  <option>Commercial</option>
+</select>
+
       <input
         type="file"
         onChange={(e) => setFile(e.target.files[0])}
@@ -362,12 +392,7 @@ function App() {
 
       <button onClick={() => searchProperties(0)}>Search</button>
 
-      <button onClick={() => {
-        setSearchLocation("");
-        fetchProperties(0);
-      }}>
-        Clear
-      </button>
+      <button onClick={clearSearch}>Clear</button>
 
       <hr />
 
@@ -453,7 +478,11 @@ function App() {
 
       <button
         disabled={currentPage === 0}
-        onClick={() => fetchProperties(currentPage - 1)}
+        onClick={() =>
+          searchLocation
+            ? searchProperties(currentPage - 1)
+            : fetchProperties(currentPage - 1)
+        }
       >
         Previous
       </button>
@@ -464,7 +493,11 @@ function App() {
 
       <button
         disabled={currentPage + 1 === totalPages}
-        onClick={() => fetchProperties(currentPage + 1)}
+        onClick={() =>
+          searchLocation
+            ? searchProperties(currentPage + 1)
+            : fetchProperties(currentPage + 1)
+        }
       >
         Next
       </button>
