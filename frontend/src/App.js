@@ -9,6 +9,7 @@ function App() {
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [price, setPrice] = useState("");
+  const [status, setStatus] = useState("Available");
 
   const [editingId, setEditingId] = useState(null);
 
@@ -25,9 +26,6 @@ function App() {
 
   const [sortBy, setSortBy] = useState("id");
   const [direction, setDirection] = useState("asc");
-
-  const [filterType, setFilterType] = useState("");
-
 
   // ================= DASHBOARD STATE =================
   const [totalProperties, setTotalProperties] = useState(0);
@@ -79,9 +77,7 @@ function App() {
       fetchProperties(0);
 
     } catch (error) {
-
       alert("Invalid credentials");
-
     }
   };
 
@@ -101,7 +97,7 @@ function App() {
       setTotalPages(data.totalPages || 1);
       setCurrentPage(data.number);
 
-      // DASHBOARD CALCULATIONS
+      // Dashboard data
       setTotalProperties(data.totalElements);
 
       const totalPrice = data.content.reduce((sum, p) => sum + p.price, 0);
@@ -110,9 +106,7 @@ function App() {
       setAveragePrice(avg.toFixed(0));
 
     } catch (error) {
-
       console.error("Fetch Error:", error);
-
     }
   };
 
@@ -140,9 +134,7 @@ function App() {
       setAveragePrice(avg.toFixed(0));
 
     } catch (error) {
-
       console.error("Search Error:", error);
-
     }
   };
 
@@ -158,6 +150,7 @@ function App() {
           title,
           location,
           price,
+          status
         });
 
         setEditingId(null);
@@ -168,6 +161,7 @@ function App() {
           title,
           location,
           price,
+          status
         });
 
       }
@@ -175,14 +169,13 @@ function App() {
       setTitle("");
       setLocation("");
       setPrice("");
+      setStatus("Available");
 
       fetchProperties(currentPage);
 
     } catch (error) {
-
       console.error("Save Error:", error);
       alert("Error saving property");
-
     }
   };
 
@@ -191,26 +184,20 @@ function App() {
   const handleDelete = async (id) => {
 
     try {
-
       await API.delete(`/api/properties/${id}`);
-
       fetchProperties(currentPage);
-
     } catch (error) {
-
       console.error("Delete Error:", error);
       alert("Only ADMIN can delete");
-
     }
+
   };
 
 
   // ================= CLEAR SEARCH =================
   const clearSearch = () => {
-
     setSearchLocation("");
     fetchProperties(0);
-
   };
 
 
@@ -223,26 +210,6 @@ function App() {
     setIsLoggedIn(false);
     setRole("");
     setProperties([]);
-
-  };
-
-
-  // ================= filter =================
-  const filterByType = async (type) => {
-
-    try {
-
-      const response = await API.get(
-        `/api/properties/type?type=${type}&page=0&size=5`
-      );
-
-      setProperties(response.data.content);
-      setTotalPages(response.data.totalPages);
-      setCurrentPage(response.data.number);
-
-    } catch (error) {
-      console.error("Filter Error:", error);
-    }
 
   };
 
@@ -279,7 +246,6 @@ function App() {
       </div>
 
     );
-
   }
 
 
@@ -290,9 +256,7 @@ function App() {
 
       <h2>Real Estate CRM</h2>
 
-      <p>
-        Logged in as: <b>{role}</b>
-      </p>
+      <p>Logged in as: <b>{role}</b></p>
 
       <button onClick={handleLogout}>Logout</button>
 
@@ -350,6 +314,15 @@ function App() {
         onChange={(e) => setPrice(e.target.value)}
       />
 
+      <select
+        value={status}
+        onChange={(e) => setStatus(e.target.value)}
+      >
+        <option value="Available">Available</option>
+        <option value="Sold">Sold</option>
+        <option value="Under Process">Under Process</option>
+      </select>
+
       <button onClick={handleSubmit}>
         {editingId ? "Update" : "Add"}
       </button>
@@ -393,21 +366,6 @@ function App() {
         Price High → Low
       </button>
 
-      <h3>Filter By Type</h3>
-
-      <button onClick={() => fetchProperties(0)}>All</button>
-
-      <button onClick={() => filterByType("Flat")}>
-        Flat
-      </button>
-
-      <button onClick={() => filterByType("Villa")}>
-        Villa
-      </button>
-
-      <button onClick={() => filterByType("Plot")}>
-        Plot
-      </button>
 
       {/* PROPERTY LIST */}
 
@@ -421,12 +379,17 @@ function App() {
 
           <br />
 
+          Status: <b>{property.status}</b>
+
+          <br />
+
           <button
             onClick={() => {
               setEditingId(property.id);
               setTitle(property.title);
               setLocation(property.location);
               setPrice(property.price);
+              setStatus(property.status);
             }}
           >
             Edit
