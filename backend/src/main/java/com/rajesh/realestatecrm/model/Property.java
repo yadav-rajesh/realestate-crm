@@ -30,4 +30,6 @@ public class Property {
     @NotBlank(message = "Status is required")
     private String status;
 
+    private String image;
+
 }

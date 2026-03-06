@@ -73,4 +73,8 @@ public class PropertyService {
         return propertyRepository.findByType(type, pageable);
     }
 
+    public Property getById(Long id) {
+        return propertyRepository.findById(id).orElseThrow();
+    }
+
 }

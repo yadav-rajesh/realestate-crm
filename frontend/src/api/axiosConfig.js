@@ -4,6 +4,7 @@ const API = axios.create({
   baseURL: "http://localhost:8080",
 });
 
+// Automatically attach JWT to every request
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 
@@ -13,5 +14,22 @@ API.interceptors.request.use((config) => {
 
   return config;
 });
+
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+
+    if (error.response && error.response.status === 401) {
+      alert("Session expired. Please login again.");
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+
+      window.location.reload();
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default API;

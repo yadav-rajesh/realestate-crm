@@ -11,6 +11,8 @@ function App() {
   const [price, setPrice] = useState("");
   const [status, setStatus] = useState("Available");
 
+  const [file, setFile] = useState(null);
+
   const [editingId, setEditingId] = useState(null);
 
   const [username, setUsername] = useState("");
@@ -59,11 +61,6 @@ function App() {
 
       let { token, role } = response.data;
 
-      if (!token) {
-        alert(response.data.message || "Login failed");
-        return;
-      }
-
       if (role.startsWith("ROLE_")) {
         role = role.replace("ROLE_", "");
       }
@@ -77,8 +74,11 @@ function App() {
       fetchProperties(0);
 
     } catch (error) {
+
       alert("Invalid credentials");
+
     }
+
   };
 
 
@@ -97,7 +97,7 @@ function App() {
       setTotalPages(data.totalPages || 1);
       setCurrentPage(data.number);
 
-      // Dashboard data
+      // Dashboard
       setTotalProperties(data.totalElements);
 
       const totalPrice = data.content.reduce((sum, p) => sum + p.price, 0);
@@ -106,8 +106,11 @@ function App() {
       setAveragePrice(avg.toFixed(0));
 
     } catch (error) {
+
       console.error("Fetch Error:", error);
+
     }
+
   };
 
 
@@ -123,19 +126,15 @@ function App() {
       const data = response.data;
 
       setProperties(data.content);
-      setTotalPages(data.totalPages || 1);
+      setTotalPages(data.totalPages);
       setCurrentPage(data.number);
 
-      setTotalProperties(data.totalElements);
-
-      const totalPrice = data.content.reduce((sum, p) => sum + p.price, 0);
-      const avg = data.content.length ? totalPrice / data.content.length : 0;
-
-      setAveragePrice(avg.toFixed(0));
-
     } catch (error) {
+
       console.error("Search Error:", error);
+
     }
+
   };
 
 
@@ -144,9 +143,11 @@ function App() {
 
     try {
 
+      let response;
+
       if (editingId) {
 
-        await API.put(`/api/properties/${editingId}`, {
+        response = await API.put(`/api/properties/${editingId}`, {
           title,
           location,
           price,
@@ -157,7 +158,7 @@ function App() {
 
       } else {
 
-        await API.post("/api/properties", {
+        response = await API.post("/api/properties", {
           title,
           location,
           price,
@@ -166,17 +167,36 @@ function App() {
 
       }
 
+      const createdProperty = response.data;
+
+      // IMAGE UPLOAD
+      if (file) {
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        await API.post(
+          `/api/properties/upload/${createdProperty.id}`,
+          formData
+        );
+
+      }
+
       setTitle("");
       setLocation("");
       setPrice("");
       setStatus("Available");
+      setFile(null);
 
       fetchProperties(currentPage);
 
     } catch (error) {
+
       console.error("Save Error:", error);
       alert("Error saving property");
+
     }
+
   };
 
 
@@ -184,20 +204,16 @@ function App() {
   const handleDelete = async (id) => {
 
     try {
+
       await API.delete(`/api/properties/${id}`);
       fetchProperties(currentPage);
+
     } catch (error) {
-      console.error("Delete Error:", error);
+
       alert("Only ADMIN can delete");
+
     }
 
-  };
-
-
-  // ================= CLEAR SEARCH =================
-  const clearSearch = () => {
-    setSearchLocation("");
-    fetchProperties(0);
   };
 
 
@@ -246,6 +262,7 @@ function App() {
       </div>
 
     );
+
   }
 
 
@@ -263,11 +280,11 @@ function App() {
       <hr />
 
 
-      {/* ================= DASHBOARD ================= */}
+      {/* DASHBOARD */}
 
       <h3>Dashboard</h3>
 
-      <div style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
+      <div style={{ display: "flex", gap: "20px" }}>
 
         <div style={{ border: "1px solid gray", padding: "10px" }}>
           <h4>Total Properties</h4>
@@ -275,7 +292,7 @@ function App() {
         </div>
 
         <div style={{ border: "1px solid gray", padding: "10px" }}>
-          <h4>Average Price (Page)</h4>
+          <h4>Average Price</h4>
           <p>₹{averagePrice}</p>
         </div>
 
@@ -318,10 +335,14 @@ function App() {
         value={status}
         onChange={(e) => setStatus(e.target.value)}
       >
-        <option value="Available">Available</option>
-        <option value="Sold">Sold</option>
-        <option value="Under Process">Under Process</option>
+        <option>Available</option>
+        <option>Sold</option>
       </select>
+
+      <input
+        type="file"
+        onChange={(e) => setFile(e.target.files[0])}
+      />
 
       <button onClick={handleSubmit}>
         {editingId ? "Update" : "Add"}
@@ -341,14 +362,17 @@ function App() {
 
       <button onClick={() => searchProperties(0)}>Search</button>
 
-      <button onClick={clearSearch}>Clear</button>
+      <button onClick={() => {
+        setSearchLocation("");
+        fetchProperties(0);
+      }}>
+        Clear
+      </button>
 
       <hr />
 
 
       {/* SORT */}
-
-      <h3>Sort</h3>
 
       <button onClick={() => {
         setSortBy("price");
@@ -373,13 +397,23 @@ function App() {
 
       {properties.map((property) => (
 
-        <div key={property.id} style={{ marginBottom: "15px" }}>
+        <div key={property.id} style={{ marginBottom: "20px" }}>
 
           <b>{property.title}</b> — {property.location} — ₹{property.price}
 
           <br />
 
           Status: <b>{property.status}</b>
+
+          <br />
+
+          {property.image && (
+            <img
+              src={`http://localhost:8080/uploads/${property.image}`}
+              width="150"
+              alt="property"
+            />
+          )}
 
           <br />
 
@@ -419,26 +453,18 @@ function App() {
 
       <button
         disabled={currentPage === 0}
-        onClick={() =>
-          searchLocation
-            ? searchProperties(currentPage - 1)
-            : fetchProperties(currentPage - 1)
-        }
+        onClick={() => fetchProperties(currentPage - 1)}
       >
         Previous
       </button>
 
       <span style={{ margin: "0 10px" }}>
-        Page {totalPages === 0 ? 0 : currentPage + 1} of {totalPages}
+        Page {currentPage + 1} of {totalPages}
       </span>
 
       <button
         disabled={currentPage + 1 === totalPages}
-        onClick={() =>
-          searchLocation
-            ? searchProperties(currentPage + 1)
-            : fetchProperties(currentPage + 1)
-        }
+        onClick={() => fetchProperties(currentPage + 1)}
       >
         Next
       </button>

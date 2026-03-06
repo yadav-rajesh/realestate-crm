@@ -9,6 +9,10 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -20,6 +24,30 @@ public class PropertyController {
 
     @PostMapping
     public Property create(@Valid @RequestBody Property property) {
+        return service.save(property);
+    }
+
+    @PostMapping("/upload/{id}")
+    public Property uploadImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file
+    ) throws IOException {
+
+        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+
+        String uploadDir = "uploads/";
+
+        File uploadPath = new File(uploadDir);
+
+        if (!uploadPath.exists()) {
+            uploadPath.mkdirs();
+        }
+
+        file.transferTo(new File(uploadDir + fileName));
+
+        Property property = service.getById(id);
+        property.setImage(fileName);
+
         return service.save(property);
     }
 
