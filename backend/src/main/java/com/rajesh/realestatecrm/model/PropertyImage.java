@@ -1,24 +1,23 @@
 package com.rajesh.realestatecrm.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Data
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
-public class User {
+public class PropertyImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String username;
+    private String imageUrl;
 
-    private String password;
-
-    private String role; // ADMIN or AGENT
+    @JsonBackReference
+    @ManyToOne
+    @JoinColumn(name="property_id")
+    private Property property;
 }

@@ -1,15 +1,19 @@
 package com.rajesh.realestatecrm.controller;
 
+import com.rajesh.realestatecrm.model.PropertyImage;
+import com.rajesh.realestatecrm.model.Property;
+import com.rajesh.realestatecrm.repository.PropertyRepository;
+import com.rajesh.realestatecrm.service.PropertyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.util.StringUtils;
 
-import com.rajesh.realestatecrm.model.Property;
-import com.rajesh.realestatecrm.service.PropertyService;
-
-import java.io.File;
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -18,84 +22,77 @@ import java.io.IOException;
 public class PropertyController {
 
     private final PropertyService service;
+    private final PropertyRepository repository;
 
-    private final String uploadDir = "uploads/";
-
-    // ================= CREATE PROPERTY (NORMAL JSON API) =================
     @PostMapping
-    public Property create(@RequestBody Property property) {
+    public Property create(@RequestBody Property property){
         return service.save(property);
     }
 
-    // ================= CREATE PROPERTY WITH IMAGE =================
-    @PostMapping("/upload/{id}")
-    public Property uploadImage(
-            @PathVariable Long id,
-            @RequestParam("file") MultipartFile file
-    ) throws IOException {
-
-        Property property = service.getById(id);
-
-        String uploadDir = System.getProperty("user.dir") + "/uploads/";
-
-        File dir = new File(uploadDir);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
-        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-
-        File uploadFile = new File(uploadDir + fileName);
-        file.transferTo(uploadFile);
-
-        property.setImage(fileName);
-
-        return service.save(property);
-    }
-
-    // ================= GET ALL WITH PAGINATION + SORT =================
     @GetMapping
-    public Page<Property> getAllProperties(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction
-    ) {
+    public Page<Property> getAll(
+            @RequestParam(defaultValue="0") int page,
+            @RequestParam(defaultValue="6") int size){
 
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page,size);
 
         return service.getAll(pageable);
     }
 
-    // ================= SEARCH =================
+    @GetMapping("/{id}")
+    public Property getById(@PathVariable Long id){
+        return service.getById(id);
+    }
+
     @GetMapping("/search")
-    public Page<Property> searchProperties(
+    public Page<Property> search(
             @RequestParam String location,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size
-    ) {
+            @RequestParam(defaultValue="0") int page){
 
-        Pageable pageable = PageRequest.of(page, size);
-
-        return service.searchByLocation(location, pageable);
+        return repository.findByLocationContainingIgnoreCase(
+                location,
+                PageRequest.of(page,6)
+        );
     }
 
-    // ================= UPDATE =================
     @PutMapping("/{id}")
-    public Property update(
-            @PathVariable Long id,
-            @RequestBody Property property
-    ) {
-        return service.update(id, property);
+    public Property update(@PathVariable Long id,@RequestBody Property property){
+        return service.update(id,property);
     }
 
-    // ================= DELETE =================
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable Long id){
         service.delete(id);
     }
+
+    @PostMapping("/upload/{id}")
+    public Property upload(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file
+    ) throws Exception{
+
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String filename = System.currentTimeMillis() + "_" + originalFilename;
+
+        Path uploadPath = Paths.get(System.getProperty("user.dir"), "uploads")
+                .toAbsolutePath()
+                .normalize();
+        Files.createDirectories(uploadPath);
+
+        Path destination = uploadPath.resolve(filename);
+        file.transferTo(destination.toFile());
+
+        Property property = service.getById(id);
+
+        if (property.getImages() == null) {
+            property.setImages(new ArrayList<>());
+        }
+        PropertyImage image = new PropertyImage();
+        image.setImageUrl(filename);
+        image.setProperty(property);
+        property.getImages().add(image);
+
+        return repository.save(property);
+    }
+
 }

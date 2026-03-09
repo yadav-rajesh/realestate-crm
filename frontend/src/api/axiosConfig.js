@@ -18,14 +18,14 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-
-    if (error.response && error.response.status === 401) {
-      alert("Session expired. Please login again.");
-
+    if (error.response?.status === 401) {
       localStorage.removeItem("token");
-      localStorage.removeItem("role");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("username");
 
-      window.location.reload();
+      if (window.location.pathname !== "/") {
+        window.location = "/";
+      }
     }
 
     return Promise.reject(error);

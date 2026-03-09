@@ -8,7 +8,9 @@ import lombok.Data;
 public class DashboardStats {
 
     private long totalProperties;
+
     private double averagePrice;
+
     private long totalLocations;
 
 }

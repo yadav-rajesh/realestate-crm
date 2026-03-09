@@ -5,20 +5,15 @@ import lombok.*;
 
 @Entity
 @Data
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
-public class User {
+public class Favorite {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String username;
+    private Long userId;
 
-    private String password;
-
-    private String role; // ADMIN or AGENT
+    private Long propertyId;
 }

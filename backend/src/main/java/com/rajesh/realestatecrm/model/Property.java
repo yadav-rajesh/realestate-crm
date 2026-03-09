@@ -1,7 +1,9 @@
 package com.rajesh.realestatecrm.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.List;
 
 @Entity
 @Data
@@ -23,5 +25,13 @@ public class Property {
 
     private String type;
 
-    private String image;
+    private String description;
+
+    private String ownerName;
+
+    private String phone;
+
+    @JsonManagedReference
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
+    private List<PropertyImage> images;
 }

@@ -1,80 +1,47 @@
 package com.rajesh.realestatecrm.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import com.rajesh.realestatecrm.exception.ResourceNotFoundException;
 import com.rajesh.realestatecrm.model.Property;
 import com.rajesh.realestatecrm.repository.PropertyRepository;
-import com.rajesh.realestatecrm.dto.DashboardStats;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.*;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class PropertyService {
 
-    private final PropertyRepository propertyRepository;
+    private final PropertyRepository repository;
 
-    // SAVE
-    public Property save(Property property) {
-        return propertyRepository.save(property);
+    public Property save(Property property){
+        return repository.save(property);
     }
 
-    // GET ALL
-    public Page<Property> getAll(Pageable pageable) {
-        return propertyRepository.findAll(pageable);
+    public Page<Property> getAll(Pageable pageable){
+        return repository.findAll(pageable);
     }
 
-    // SEARCH
-    public Page<Property> searchByLocation(String location, Pageable pageable) {
-        return propertyRepository.findByLocationContainingIgnoreCase(location, pageable);
+    public Property getById(Long id){
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Property not found with id: " + id));
     }
 
-    // UPDATE
-    public Property update(Long id, Property property) {
+    public Property update(Long id,Property property){
 
-        Optional<Property> existing = propertyRepository.findById(id);
+        Property existing = getById(id);
 
-        if(existing.isPresent()) {
-            Property p = existing.get();
-            p.setTitle(property.getTitle());
-            p.setLocation(property.getLocation());
-            p.setPrice(property.getPrice());
-            p.setType(property.getType());
-            p.setStatus(property.getStatus());
+        existing.setTitle(property.getTitle());
+        existing.setLocation(property.getLocation());
+        existing.setPrice(property.getPrice());
+        existing.setType(property.getType());
+        existing.setStatus(property.getStatus());
+        existing.setDescription(property.getDescription());
 
-            return propertyRepository.save(p);
-        }
-
-        return null;
+        return repository.save(existing);
     }
 
-    // DELETE
-    public void delete(Long id) {
-        propertyRepository.deleteById(id);
+    public void delete(Long id){
+        Property existing = getById(id);
+        repository.delete(existing);
     }
-
-    // DASHBOARD STATS
-    public DashboardStats getDashboardStats() {
-
-        long total = propertyRepository.count();
-        Double avg = propertyRepository.findAveragePrice();
-        Long locations = propertyRepository.countDistinctLocations();
-
-        return new DashboardStats(
-                total,
-                avg != null ? avg : 0,
-                locations
-        );
-    }
-
-    public Page<Property> filterByType(String type, Pageable pageable) {
-        return propertyRepository.findByType(type, pageable);
-    }
-
-    public Property getById(Long id) {
-        return propertyRepository.findById(id).orElseThrow();
-    }
-
 }

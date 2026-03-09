@@ -20,3 +20,4 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
 
     Page<Property> findByType(String type, Pageable pageable);
 }
+
