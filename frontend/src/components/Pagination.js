@@ -1,10 +1,34 @@
-export default function Pagination({ page, totalPages, setPage }) {
+export default function Pagination({
+  page,
+  totalPages,
+  totalElements,
+  pageSize,
+  setPage,
+  setPageSize,
+}) {
   if (!totalPages) {
     return null;
   }
 
   return (
-    <div className="flex justify-center items-center gap-4 mt-6">
+    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mt-6">
+      <div className="text-sm text-slate-600">
+        Showing page {page + 1} of {totalPages}
+        {typeof totalElements === "number" && <> | Total results: {totalElements}</>}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <label className="text-sm text-slate-600">Page size</label>
+        <select
+          value={pageSize}
+          onChange={(e) => setPageSize(Number(e.target.value))}
+          className="border border-slate-300 rounded-lg px-2 py-1.5 bg-white"
+        >
+          <option value={6}>6</option>
+          <option value={12}>12</option>
+        </select>
+      </div>
+
       <button
         onClick={() => setPage(page - 1)}
         disabled={page === 0}

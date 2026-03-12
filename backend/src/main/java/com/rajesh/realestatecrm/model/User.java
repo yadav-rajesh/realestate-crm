@@ -21,4 +21,10 @@ public class User {
     private String password;
 
     private String role; // ADMIN or AGENT
+
+    private String fullName;
+
+    private String phone;
+
+    private String email;
 }

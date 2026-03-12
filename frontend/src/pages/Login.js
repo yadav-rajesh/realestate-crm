@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import API from "../api/axiosConfig";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -11,15 +12,16 @@ export default function Login() {
     try {
       setLoading(true);
       setError("");
-      const res = await API.post("/api/auth/login", { username, password });
+      const res = await API.post("/api/auth/login", { identifier, password });
 
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("username", res.data.username || username);
+      localStorage.setItem("username", res.data.username || identifier);
+      localStorage.setItem("role", (res.data.role || "USER").toUpperCase());
       if (res.data.userId) {
         localStorage.setItem("userId", String(res.data.userId));
       }
 
-      window.location = "/dashboard";
+      window.location = "/";
     } catch {
       setError("Invalid username or password.");
     } finally {
@@ -52,9 +54,9 @@ export default function Login() {
 
           <input
             className="border border-slate-200 focus:border-blue-500 focus:outline-none p-3 w-full mb-3 rounded-lg"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Email or Mobile"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
           />
 
           <input
@@ -67,11 +69,18 @@ export default function Login() {
 
           <button
             onClick={login}
-            disabled={loading || !username || !password}
+            disabled={loading || !identifier || !password}
             className="bg-blue-600 hover:bg-blue-700 text-white w-full p-3 rounded-lg font-semibold transition disabled:opacity-60 disabled:hover:bg-blue-600"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
+
+          <p className="text-sm text-slate-600 mt-4">
+            New user?{" "}
+            <Link to="/register" className="text-blue-600 font-semibold">
+              Register here
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -1,8 +1,7 @@
 package com.rajesh.realestatecrm.controller;
 
-import com.rajesh.realestatecrm.model.PropertyImage;
-import com.rajesh.realestatecrm.model.Property;
-import com.rajesh.realestatecrm.repository.PropertyRepository;
+import com.rajesh.realestatecrm.dto.PropertyRequest;
+import com.rajesh.realestatecrm.dto.PropertyResponse;
 import com.rajesh.realestatecrm.service.PropertyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -13,7 +12,6 @@ import org.springframework.util.StringUtils;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/properties")
@@ -22,15 +20,14 @@ import java.util.ArrayList;
 public class PropertyController {
 
     private final PropertyService service;
-    private final PropertyRepository repository;
 
     @PostMapping
-    public Property create(@RequestBody Property property){
-        return service.save(property);
+    public PropertyResponse create(@RequestBody PropertyRequest request){
+        return service.save(request);
     }
 
     @GetMapping
-    public Page<Property> getAll(
+    public Page<PropertyResponse> getAll(
             @RequestParam(defaultValue="0") int page,
             @RequestParam(defaultValue="6") int size){
 
@@ -40,24 +37,22 @@ public class PropertyController {
     }
 
     @GetMapping("/{id}")
-    public Property getById(@PathVariable Long id){
+    public PropertyResponse getById(@PathVariable Long id){
         return service.getById(id);
     }
 
     @GetMapping("/search")
-    public Page<Property> search(
+    public Page<PropertyResponse> search(
             @RequestParam String location,
-            @RequestParam(defaultValue="0") int page){
+            @RequestParam(defaultValue="0") int page,
+            @RequestParam(defaultValue="6") int size){
 
-        return repository.findByLocationContainingIgnoreCase(
-                location,
-                PageRequest.of(page,6)
-        );
+        return service.searchByLocation(location, PageRequest.of(page,size));
     }
 
     @PutMapping("/{id}")
-    public Property update(@PathVariable Long id,@RequestBody Property property){
-        return service.update(id,property);
+    public PropertyResponse update(@PathVariable Long id,@RequestBody PropertyRequest request){
+        return service.update(id,request);
     }
 
     @DeleteMapping("/{id}")
@@ -66,7 +61,7 @@ public class PropertyController {
     }
 
     @PostMapping("/upload/{id}")
-    public Property upload(
+    public PropertyResponse upload(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file
     ) throws Exception{
@@ -82,17 +77,7 @@ public class PropertyController {
         Path destination = uploadPath.resolve(filename);
         file.transferTo(destination.toFile());
 
-        Property property = service.getById(id);
-
-        if (property.getImages() == null) {
-            property.setImages(new ArrayList<>());
-        }
-        PropertyImage image = new PropertyImage();
-        image.setImageUrl(filename);
-        image.setProperty(property);
-        property.getImages().add(image);
-
-        return repository.save(property);
+        return service.addImage(id, filename);
     }
 
 }

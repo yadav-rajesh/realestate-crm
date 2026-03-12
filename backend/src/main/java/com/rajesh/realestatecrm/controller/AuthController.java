@@ -22,7 +22,12 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request){
 
-        User user = service.login(request.getUsername(),request.getPassword());
+        String identifier = request.getIdentifier();
+        if (identifier == null || identifier.isBlank()) {
+            identifier = request.getUsername();
+        }
+
+        User user = service.login(identifier, request.getPassword());
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.getRole());
 
@@ -31,10 +36,19 @@ public class AuthController {
 
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody RegisterRequest request) {
-        User user = service.register(request.getUsername(), request.getPassword(), request.getRole());
+        User user = service.register(
+                request.getFullName(),
+                request.getEmail(),
+                request.getPhone(),
+                request.getPassword()
+        );
+
         Map<String, Object> response = new HashMap<>();
         response.put("id", user.getId());
         response.put("username", user.getUsername());
+        response.put("fullName", user.getFullName());
+        response.put("email", user.getEmail());
+        response.put("phone", user.getPhone());
         response.put("role", user.getRole());
         response.put("message", "User registered successfully");
         return response;

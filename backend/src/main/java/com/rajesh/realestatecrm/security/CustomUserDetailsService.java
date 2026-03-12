@@ -22,7 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         String role = user.getRole();
 
         if (role == null || role.isEmpty()) {
-            role = "AGENT";
+            role = "USER";
         }
 
 

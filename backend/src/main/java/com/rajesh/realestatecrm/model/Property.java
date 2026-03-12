@@ -27,9 +27,9 @@ public class Property {
 
     private String description;
 
-    private String ownerName;
-
-    private String phone;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
     @JsonManagedReference
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)

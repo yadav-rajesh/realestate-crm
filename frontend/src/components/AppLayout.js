@@ -1,31 +1,45 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
+import { clearAuthSession, isAuthenticated } from "../utils/auth";
 
 export default function AppLayout() {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    return <Navigate to="/" replace />;
-  }
+  const loggedIn = isAuthenticated();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("userId");
+    clearAuthSession();
     window.location = "/";
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="flex min-h-screen">
-        <Sidebar />
-        <div className="flex-1 min-w-0">
-          <Navbar logout={logout} />
-          <main className="p-4 md:p-6 lg:p-8">
-            <Outlet />
-          </main>
-        </div>
+    <div className="min-h-screen bg-slate-100 text-slate-900 overflow-x-hidden">
+      <Sidebar
+        isLoggedIn={loggedIn}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+
+      {isSidebarOpen && (
+        <button
+          aria-label="Close menu"
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/40 z-30"
+        />
+      )}
+
+      <div className="min-h-screen flex flex-col">
+        <Navbar
+          isLoggedIn={loggedIn}
+          logout={logout}
+          onMenuOpen={() => setIsSidebarOpen(true)}
+        />
+        <main className="p-4 md:p-6 lg:p-8 w-full max-w-7xl mx-auto">
+          <Outlet />
+        </main>
+        <Footer />
       </div>
     </div>
   );

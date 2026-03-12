@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearAuthSession, redirectToLogin } from "../utils/auth";
 
 const API = axios.create({
   baseURL: "http://localhost:8080",
@@ -19,13 +20,8 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("username");
-
-      if (window.location.pathname !== "/") {
-        window.location = "/";
-      }
+      clearAuthSession();
+      redirectToLogin();
     }
 
     return Promise.reject(error);
