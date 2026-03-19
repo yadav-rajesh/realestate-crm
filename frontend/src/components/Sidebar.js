@@ -35,6 +35,14 @@ export default function Sidebar({ isLoggedIn, isOpen, onClose }) {
       </div>
 
       <nav className="space-y-2">
+        <Link className={linkClass} to="/" onClick={onClose}>
+          Home
+        </Link>
+
+        <Link className={linkClass} to="/about" onClick={onClose}>
+          About
+        </Link>
+
         <Link className={linkClass} to="/properties" onClick={onClose}>
           Properties
         </Link>
@@ -81,3 +89,4 @@ export default function Sidebar({ isLoggedIn, isOpen, onClose }) {
     </aside>
   );
 }
+

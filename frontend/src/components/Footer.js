@@ -9,6 +9,9 @@ export default function Footer() {
           <Link to="/" className="hover:text-slate-900">
             Home
           </Link>
+          <Link to="/about" className="hover:text-slate-900">
+            About
+          </Link>
           <Link to="/properties" className="hover:text-slate-900">
             Properties
           </Link>
@@ -20,4 +23,3 @@ export default function Footer() {
     </footer>
   );
 }
-
