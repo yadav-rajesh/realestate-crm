@@ -22,7 +22,17 @@ export default function Sidebar({ isLoggedIn, isOpen, onClose }) {
       </button>
 
       <p className="text-xs uppercase tracking-[0.18em] text-slate-400 mb-2">Workspace</p>
-      <h1 className="text-xl font-bold mb-8">RealEstate CRM</h1>
+      <div className="mb-8 flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-800/60 p-3">
+        <img
+          src="/nirmana-logo.jpg"
+          alt="Nirmana logo"
+          className="h-14 w-14 shrink-0 rounded-xl bg-white p-1 shadow-lg object-contain"
+        />
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold leading-tight">Nirmana</h1>
+          <p className="text-xs text-slate-400 mt-1">Realtors & Consultancy</p>
+        </div>
+      </div>
 
       <nav className="space-y-2">
         <Link className={linkClass} to="/properties" onClick={onClose}>

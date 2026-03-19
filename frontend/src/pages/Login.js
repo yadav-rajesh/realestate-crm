@@ -33,16 +33,20 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-cyan-100 flex items-center justify-center px-4">
       <div className="w-full max-w-5xl grid md:grid-cols-2 gap-8 items-center">
         <section className="text-slate-800">
-          <p className="inline-block text-xs font-semibold tracking-[0.2em] uppercase bg-white/70 rounded-full px-3 py-1 shadow-sm">
-            RealEstate CRM
-          </p>
-          <h1 className="mt-5 text-4xl md:text-5xl font-black leading-tight">
-            Close More Deals With
-            <span className="block text-blue-700">One Unified CRM</span>
+          <img
+            src="/nirmana-logo.jpg"
+            alt="Nirmana logo"
+            className="h-24 md:h-28 w-auto rounded-3xl border border-white/70 bg-white/80 p-2 shadow-2xl"
+          />
+          <h1 className="mt-6 text-4xl md:text-5xl font-black leading-tight">
+            Trusted property guidance
+            <span className="block text-blue-700 text-2xl md:text-3xl mt-2">
+              For clients, agents, and owners
+            </span>
           </h1>
           <p className="mt-4 text-slate-600 text-lg max-w-md">
-            Manage properties, agents, and customer follow-ups from one place.
-            Built for daily speed and visibility.
+            Nirmana Realtors & Consultancy helps you discover, manage, and present
+            properties through one clean portal.
           </p>
         </section>
 
@@ -86,3 +90,5 @@ export default function Login() {
     </div>
   );
 }
+
+
