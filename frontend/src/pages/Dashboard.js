@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../api/axiosConfig";
 import { getUserRole } from "../utils/auth";
+import {
+  formatPrice,
+  getAreaLabel,
+  getBhkLabel,
+  getPropertyImageUrl,
+} from "../utils/propertyPresentation";
 
 export default function Dashboard() {
   const role = getUserRole();
@@ -19,7 +25,7 @@ export default function Dashboard() {
 
     Promise.allSettled([
       API.get("/api/dashboard"),
-      API.get("/api/properties?page=0&size=100&sort=id,desc"),
+      API.get("/api/properties?page=0&size=100"),
       API.get("/api/contact-requests"),
     ])
       .then(([statsRes, propertiesRes, requestsRes]) => {
@@ -50,197 +56,238 @@ export default function Dashboard() {
       });
   }, []);
 
-  const recentProperties = useMemo(() => properties.slice(0, 6), [properties]);
-  const recentRequests = useMemo(() => requests.slice(0, 6), [requests]);
+  const recentProperties = useMemo(() => properties.slice(0, 5), [properties]);
+  const recentRequests = useMemo(() => requests.slice(0, 5), [requests]);
 
   const inventoryStats = useMemo(() => {
-    const available = properties.filter((p) => (p.status || "").toLowerCase() === "available").length;
-    const sold = properties.filter((p) => (p.status || "").toLowerCase() === "sold").length;
-    const residential = properties.filter(
-      (p) => (p.type || "").toLowerCase() === "residential"
-    ).length;
-    const commercial = properties.filter((p) => (p.type || "").toLowerCase() === "commercial").length;
-
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const newToday = requests.filter((r) => r.createdAt && new Date(r.createdAt) >= start).length;
+    const available = properties.filter((property) => (property.status || "").toLowerCase() === "available").length;
+    const sold = properties.filter((property) => (property.status || "").toLowerCase() === "sold").length;
+    const commercial = properties.filter((property) => (property.type || "").toLowerCase() === "commercial").length;
+    const residential = properties.length - commercial;
 
     return {
       available,
       sold,
-      residential,
       commercial,
-      totalRequests: requests.length,
-      newToday,
+      residential,
+      inquiries: requests.length,
     };
   }, [properties, requests]);
 
   if (loading) {
-    return <div className="p-6">Loading dashboard...</div>;
+    return <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">Loading dashboard...</div>;
   }
 
   if (error) {
-    return <div className="p-6 text-red-600">{error}</div>;
+    return <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-6 text-rose-700">{error}</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Dashboard</h2>
-        <p className="text-slate-600">Quick control panel for listings and requests.</p>
-      </div>
-
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">Total Properties</h3>
-          <p className="text-3xl font-bold mt-2">{stats.totalProperties ?? 0}</p>
-        </div>
-
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">Average Price</h3>
-          <p className="text-3xl font-bold mt-2">Rs. {Math.round(stats.averagePrice || 0)}</p>
-        </div>
-
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">Locations</h3>
-          <p className="text-3xl font-bold mt-2">{stats.totalLocations ?? 0}</p>
-        </div>
-      </div>
-
-      <section className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          <Link
-            to="/add-property"
-            className="rounded-lg border border-slate-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition"
-          >
-            <p className="font-semibold">Add Property</p>
-            <p className="text-sm text-slate-600 mt-1">Create a new listing.</p>
-          </Link>
-
-          <Link
-            to="/requests"
-            className="rounded-lg border border-slate-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition"
-          >
-            <p className="font-semibold">View Requests</p>
-            <p className="text-sm text-slate-600 mt-1">Check incoming inquiries.</p>
-          </Link>
-
-          <Link
-            to="/properties"
-            className="rounded-lg border border-slate-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition"
-          >
-            <p className="font-semibold">Browse Listings</p>
-            <p className="text-sm text-slate-600 mt-1">See all active properties.</p>
-          </Link>
-
-          {role === "ADMIN" && (
-            <Link
-              to="/admin/users"
-              className="rounded-lg border border-slate-200 p-4 hover:border-blue-400 hover:bg-blue-50 transition"
-            >
-              <p className="font-semibold">Manage Users</p>
-              <p className="text-sm text-slate-600 mt-1">Review user accounts.</p>
-            </Link>
-          )}
-        </div>
-      </section>
-
-      <section className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">Available</h3>
-          <p className="text-2xl font-bold mt-2">{inventoryStats.available}</p>
-        </div>
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">Sold</h3>
-          <p className="text-2xl font-bold mt-2">{inventoryStats.sold}</p>
-        </div>
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">Residential</h3>
-          <p className="text-2xl font-bold mt-2">{inventoryStats.residential}</p>
-        </div>
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">Commercial</h3>
-          <p className="text-2xl font-bold mt-2">{inventoryStats.commercial}</p>
-        </div>
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">Total Requests</h3>
-          <p className="text-2xl font-bold mt-2">{inventoryStats.totalRequests}</p>
-        </div>
-        <div className="bg-white p-5 shadow-sm rounded-xl border border-slate-200">
-          <h3 className="text-slate-500 text-sm">New Today</h3>
-          <p className="text-2xl font-bold mt-2">{inventoryStats.newToday}</p>
-        </div>
-      </section>
-
-      <section className="bg-white rounded-xl border border-slate-200 p-5">
-        <h3 className="text-lg font-semibold mb-4">Recently Added</h3>
-        {recentProperties.length === 0 && <p className="text-slate-500">No properties added yet.</p>}
-        <div className="grid lg:grid-cols-2 gap-3">
-          {recentProperties.map((property) => (
-            <div key={property.id} className="border border-slate-200 rounded-lg p-3">
-              <p className="font-semibold">{property.title}</p>
-              <p className="text-sm text-slate-600">{property.location}</p>
-              <p className="text-sm text-green-700 font-semibold mt-1">Rs. {property.price}</p>
-              <div className="mt-3 flex gap-2">
-                <Link
-                  to={`/property/${property.id}`}
-                  className="text-sm px-3 py-1.5 rounded-md border border-slate-200 hover:bg-slate-50"
-                >
-                  View
-                </Link>
-                <Link
-                  to={`/edit-property/${property.id}`}
-                  className="text-sm px-3 py-1.5 rounded-md border border-slate-200 hover:bg-slate-50"
-                >
-                  Edit
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-white rounded-xl border border-slate-200 p-5">
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <h3 className="text-lg font-semibold">Latest Contact Requests</h3>
-          <Link to="/requests" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-            Open all
-          </Link>
-        </div>
-
-        {requestError && <p className="text-sm text-amber-700 mb-3">{requestError}</p>}
-
-        {recentRequests.length === 0 ? (
-          <p className="text-slate-500">No requests yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 border-y border-slate-200">
-                <tr>
-                  <th className="px-3 py-2 text-left">Property</th>
-                  <th className="px-3 py-2 text-left">Name</th>
-                  <th className="px-3 py-2 text-left">Phone</th>
-                  <th className="px-3 py-2 text-left">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentRequests.map((request) => (
-                  <tr key={request.id} className="border-b border-slate-100">
-                    <td className="px-3 py-2">
-                      {request.propertyTitle || `#${request.propertyId || "-"}`}
-                    </td>
-                    <td className="px-3 py-2">{request.requesterName || "-"}</td>
-                    <td className="px-3 py-2">{request.requesterPhone || "-"}</td>
-                    <td className="px-3 py-2">
-                      {request.createdAt ? new Date(request.createdAt).toLocaleString() : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="space-y-8">
+      <section className="rounded-[32px] bg-slate-900 px-6 py-8 text-white shadow-[0_24px_60px_-28px_rgba(15,23,42,0.56)] md:px-8">
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-100">{role} Workspace</p>
+            <h1 className="mt-3 text-3xl font-black md:text-5xl">Premium operations dashboard</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-blue-50 md:text-lg">
+              Manage listings, review lead requests, and move inventory through a cleaner,
+              more presentation-ready control center.
+            </p>
           </div>
-        )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[24px] border border-white/10 bg-white/10 p-4 backdrop-blur">
+              <p className="text-sm text-blue-100">Total Properties</p>
+              <p className="mt-2 text-3xl font-black">{stats.totalProperties ?? 0}</p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/10 p-4 backdrop-blur">
+              <p className="text-sm text-blue-100">Average Price</p>
+              <p className="mt-2 text-3xl font-black">{formatPrice(stats.averagePrice || 0)}</p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/10 p-4 backdrop-blur">
+              <p className="text-sm text-blue-100">Open Inquiries</p>
+              <p className="mt-2 text-3xl font-black">{inventoryStats.inquiries}</p>
+            </div>
+            <div className="rounded-[24px] border border-white/10 bg-white/10 p-4 backdrop-blur">
+              <p className="text-sm text-blue-100">Locations</p>
+              <p className="mt-2 text-3xl font-black">{stats.totalLocations ?? 0}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Quick Actions</p>
+          <h2 className="mt-2 text-2xl font-black text-slate-900">Move faster</h2>
+
+          <div className="mt-5 grid gap-3">
+            <Link
+              to="/add-property"
+              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+            >
+              Add Property
+            </Link>
+            <Link
+              to="/requests"
+              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+            >
+              Review Requests
+            </Link>
+            <Link
+              to="/properties"
+              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+            >
+              Browse Listings
+            </Link>
+            {role === "ADMIN" && (
+              <Link
+                to="/admin/users"
+                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
+                Manage Users
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Available</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{inventoryStats.available}</p>
+          </div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Sold</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{inventoryStats.sold}</p>
+          </div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Residential</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{inventoryStats.residential}</p>
+          </div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Commercial</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{inventoryStats.commercial}</p>
+          </div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Lead Requests</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{inventoryStats.inquiries}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_360px]">
+        <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Recent Listings</p>
+              <h2 className="mt-2 text-2xl font-black text-slate-900">Presentation-ready inventory</h2>
+            </div>
+            <Link to="/properties" className="text-sm font-semibold text-blue-700">
+              View all
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-4">
+            {recentProperties.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                No recent properties available.
+              </div>
+            ) : (
+              recentProperties.map((property) => (
+                <div
+                  key={property.id}
+                  className="grid gap-4 rounded-[24px] border border-slate-200 p-4 md:grid-cols-[150px_minmax(0,1fr)]"
+                >
+                  <img
+                    src={getPropertyImageUrl(property)}
+                    alt={property.title}
+                    className="h-32 w-full rounded-2xl object-cover"
+                  />
+                  <div>
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">{property.title}</h3>
+                        <p className="mt-1 text-sm text-slate-500">{property.location}</p>
+                      </div>
+                      <p className="text-xl font-black text-slate-900">{formatPrice(property.price)}</p>
+                    </div>
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                        {getBhkLabel(property)}
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                        {getAreaLabel(property)}
+                      </div>
+                      <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                        {property.type}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link
+                        to={`/property/${property.id}`}
+                        className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+                      >
+                        View
+                      </Link>
+                      <Link
+                        to={`/edit-property/${property.id}`}
+                        className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800"
+                      >
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Latest Inquiries</p>
+                <h2 className="mt-2 text-2xl font-black text-slate-900">Lead pipeline</h2>
+              </div>
+              <Link to="/requests" className="text-sm font-semibold text-blue-700">
+                Open all
+              </Link>
+            </div>
+
+            {requestError && <p className="mt-4 text-sm text-amber-700">{requestError}</p>}
+
+            <div className="mt-5 space-y-3">
+              {recentRequests.length === 0 ? (
+                <div className="rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                  No inquiries captured yet.
+                </div>
+              ) : (
+                recentRequests.map((request) => (
+                  <div key={request.id} className="rounded-2xl border border-slate-200 p-4">
+                    <p className="font-semibold text-slate-900">{request.requesterName || "Lead"}</p>
+                    <p className="mt-1 text-sm text-slate-500">{request.propertyTitle || `Property #${request.propertyId}`}</p>
+                    <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-600">
+                      <span>{request.requesterPhone || "No phone"}</span>
+                      <span>{request.createdAt ? new Date(request.createdAt).toLocaleDateString() : "-"}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">UI Upgrade Notes</p>
+            <div className="mt-4 space-y-3 text-sm text-slate-600">
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">Cleaner cards and premium spacing improve internal usability.</div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">Recent listings now feel aligned with the public storefront.</div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">Lead requests are surfaced more clearly for faster response.</div>
+            </div>
+          </section>
+        </div>
       </section>
     </div>
   );

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Outlet } from "react-router-dom";
+import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -15,7 +15,7 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden text-slate-900">
       <Sidebar
         isLoggedIn={loggedIn}
         isOpen={isSidebarOpen}
@@ -26,17 +26,18 @@ export default function AppLayout() {
         <button
           aria-label="Close menu"
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 bg-black/40 z-30"
+          className="fixed inset-0 z-30 bg-slate-950/45"
         />
       )}
 
-      <div className="min-h-screen flex flex-col">
+      <div className="relative flex min-h-screen flex-col">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-blue-50/80 via-white/40 to-transparent" />
         <Navbar
           isLoggedIn={loggedIn}
           logout={logout}
           onMenuOpen={() => setIsSidebarOpen(true)}
         />
-        <main className="p-4 md:p-6 lg:p-8 w-full max-w-7xl mx-auto">
+        <main className="relative mx-auto w-full max-w-[1400px] flex-1 px-4 py-5 md:px-6 md:py-8 lg:px-8">
           <Outlet />
         </main>
         <Footer />

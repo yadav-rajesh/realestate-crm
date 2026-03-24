@@ -1,11 +1,12 @@
 import axios from "axios";
 import { clearAuthSession, redirectToLogin } from "../utils/auth";
 
+export const API_BASE_URL = "http://localhost:8080";
+
 const API = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: API_BASE_URL,
 });
 
-// Automatically attach JWT to every request
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 

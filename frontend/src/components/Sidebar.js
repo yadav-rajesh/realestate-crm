@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { getUserRole } from "../utils/auth";
 
 export default function Sidebar({ isLoggedIn, isOpen, onClose }) {
@@ -6,87 +6,96 @@ export default function Sidebar({ isLoggedIn, isOpen, onClose }) {
   const isAgentOwnerOrAdmin = role === "AGENT" || role === "OWNER" || role === "ADMIN";
   const isAdmin = role === "ADMIN";
 
-  const linkClass = "block rounded-lg px-3 py-2 hover:bg-slate-800";
+  const linkClass = ({ isActive }) =>
+    `block rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+      isActive
+        ? "bg-white text-slate-900 shadow-sm"
+        : "text-slate-200 hover:bg-slate-800/90 hover:text-white"
+    }`;
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-full w-64 bg-slate-900 text-slate-100 p-5 z-40 transform transition-transform duration-200 ${
+      className={`fixed top-0 left-0 z-40 flex h-full w-72 flex-col bg-slate-900 p-5 text-slate-100 shadow-2xl transform transition-transform duration-200 ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
       <button
         onClick={onClose}
-        className="mb-4 border border-slate-700 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-800"
+        className="mb-4 w-fit rounded-xl border border-slate-700 px-3 py-1.5 text-sm hover:bg-slate-800"
       >
         Close
       </button>
 
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-400 mb-2">Workspace</p>
-      <div className="mb-8 flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-800/60 p-3">
+      <p className="mb-2 text-xs uppercase tracking-[0.18em] text-slate-400">Workspace</p>
+      <div className="mb-8 flex items-center gap-3 rounded-[24px] border border-slate-800 bg-slate-800/60 p-3">
         <img
           src="/nirmana-logo.jpg"
           alt="Nirmana logo"
-          className="h-14 w-14 shrink-0 rounded-xl bg-white p-1 shadow-lg object-contain"
+          className="h-14 w-14 shrink-0 rounded-2xl bg-white p-1 object-contain shadow-lg"
         />
         <div className="min-w-0">
           <h1 className="text-lg font-bold leading-tight">Nirmana</h1>
-          <p className="text-xs text-slate-400 mt-1">Realtors & Consultancy</p>
+          <p className="mt-1 text-xs text-slate-400">Realtors & Consultancy</p>
         </div>
       </div>
 
-      <nav className="space-y-2">
-        <Link className={linkClass} to="/" onClick={onClose}>
+      <nav className="space-y-1.5">
+        <NavLink className={linkClass} to="/" end onClick={onClose}>
           Home
-        </Link>
-
-        <Link className={linkClass} to="/about" onClick={onClose}>
+        </NavLink>
+        <NavLink className={linkClass} to="/about" onClick={onClose}>
           About
-        </Link>
-
-        <Link className={linkClass} to="/properties" onClick={onClose}>
+        </NavLink>
+        <NavLink className={linkClass} to="/properties" onClick={onClose}>
           Properties
-        </Link>
+        </NavLink>
 
         {isLoggedIn ? (
           <>
             {isAgentOwnerOrAdmin && (
-              <Link className={linkClass} to="/dashboard" onClick={onClose}>
+              <NavLink className={linkClass} to="/dashboard" onClick={onClose}>
                 Dashboard
-              </Link>
+              </NavLink>
             )}
 
-            <Link className={linkClass} to="/favorites" onClick={onClose}>
+            <NavLink className={linkClass} to="/favorites" onClick={onClose}>
               Favorites
-            </Link>
+            </NavLink>
 
             {isAgentOwnerOrAdmin && (
               <>
-                <Link className={linkClass} to="/requests" onClick={onClose}>
+                <NavLink className={linkClass} to="/requests" onClick={onClose}>
                   Requests
-                </Link>
-                <Link className={linkClass} to="/add-property" onClick={onClose}>
+                </NavLink>
+                <NavLink className={linkClass} to="/add-property" onClick={onClose}>
                   Add Property
-                </Link>
+                </NavLink>
               </>
             )}
 
             {isAdmin && (
-              <Link className={linkClass} to="/admin/users" onClick={onClose}>
+              <NavLink className={linkClass} to="/admin/users" onClick={onClose}>
                 Users
-              </Link>
+              </NavLink>
             )}
 
-            <Link className={linkClass} to="/profile" onClick={onClose}>
+            <NavLink className={linkClass} to="/profile" onClick={onClose}>
               Profile
-            </Link>
+            </NavLink>
           </>
         ) : (
-          <Link className={linkClass} to="/login" onClick={onClose}>
+          <NavLink className={linkClass} to="/login" onClick={onClose}>
             Login
-          </Link>
+          </NavLink>
         )}
       </nav>
+
+      <div className="mt-auto rounded-[24px] border border-slate-800 bg-slate-800/70 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Lead Ready</p>
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          Browse verified listings publicly, then unlock inquiry tools, favorites, and management features when you sign in.
+        </p>
+      </div>
     </aside>
   );
 }
-
