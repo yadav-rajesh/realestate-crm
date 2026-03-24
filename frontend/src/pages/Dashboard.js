@@ -64,6 +64,7 @@ export default function Dashboard() {
     const sold = properties.filter((property) => (property.status || "").toLowerCase() === "sold").length;
     const commercial = properties.filter((property) => (property.type || "").toLowerCase() === "commercial").length;
     const residential = properties.length - commercial;
+    const views = properties.reduce((total, property) => total + Number(property.views || 0), 0);
 
     return {
       available,
@@ -71,8 +72,10 @@ export default function Dashboard() {
       commercial,
       residential,
       inquiries: requests.length,
+      views: stats.totalViews ?? views,
+      locations: stats.totalLocations ?? 0,
     };
-  }, [properties, requests]);
+  }, [properties, requests, stats]);
 
   if (loading) {
     return <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">Loading dashboard...</div>;
@@ -109,8 +112,8 @@ export default function Dashboard() {
               <p className="mt-2 text-3xl font-black">{inventoryStats.inquiries}</p>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-white/10 p-4 backdrop-blur">
-              <p className="text-sm text-blue-100">Locations</p>
-              <p className="mt-2 text-3xl font-black">{stats.totalLocations ?? 0}</p>
+              <p className="text-sm text-blue-100">Total Views</p>
+              <p className="mt-2 text-3xl font-black">{inventoryStats.views}</p>
             </div>
           </div>
         </div>
@@ -151,7 +154,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Available</p>
             <p className="mt-2 text-3xl font-black text-slate-900">{inventoryStats.available}</p>
@@ -171,6 +174,10 @@ export default function Dashboard() {
           <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Lead Requests</p>
             <p className="mt-2 text-3xl font-black text-slate-900">{inventoryStats.inquiries}</p>
+          </div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Locations</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{inventoryStats.locations}</p>
           </div>
         </div>
       </section>
@@ -222,6 +229,11 @@ export default function Dashboard() {
                       <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
                         {property.type}
                       </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+                      <span className="rounded-full bg-slate-100 px-3 py-1">{property.views ?? 0} views</span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1">{property.inquiryCount ?? 0} inquiries</span>
                     </div>
 
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -292,3 +304,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+

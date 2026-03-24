@@ -2,6 +2,8 @@ package com.rajesh.realestatecrm.dto;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class PropertyRequest {
 
@@ -11,5 +13,8 @@ public class PropertyRequest {
     private String status;
     private String type;
     private String description;
+    private Integer bhk;
+    private Integer areaSqft;
+    private List<String> amenities;
 }
 

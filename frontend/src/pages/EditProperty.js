@@ -5,6 +5,7 @@ import API from "../api/axiosConfig";
 export default function EditProperty() {
   const { id } = useParams();
   const [property, setProperty] = useState(null);
+  const [amenitiesInput, setAmenitiesInput] = useState("");
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -15,13 +16,14 @@ export default function EditProperty() {
     setLoading(true);
     setError("");
 
-    API.get(`/api/properties/${id}`)
+    API.get(`/api/properties/${id}?incrementView=false`)
       .then((res) => {
         if (!active) {
           return;
         }
 
         setProperty(res.data || null);
+        setAmenitiesInput((res.data?.amenities || []).join(", "));
       })
       .catch(() => {
         if (active) {
@@ -40,6 +42,12 @@ export default function EditProperty() {
     };
   }, [id]);
 
+  const parseAmenities = () =>
+    amenitiesInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
   const update = async () => {
     if (!property) {
       return;
@@ -52,8 +60,11 @@ export default function EditProperty() {
         location: property.location || "",
         price: Number(property.price || 0),
         status: property.status || "Available",
-        type: property.type || "Residential",
+        type: property.type || "Flat",
         description: property.description || "",
+        bhk: property.type === "Commercial" ? null : Number(property.bhk || 0) || null,
+        areaSqft: Number(property.areaSqft || 0) || null,
+        amenities: parseAmenities(),
       };
 
       await API.put(`/api/properties/${id}`, payload);
@@ -111,29 +122,65 @@ export default function EditProperty() {
         placeholder="Price"
       />
 
-      <select
-        className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3"
-        value={property.status || "Available"}
-        onChange={(e) => setProperty({ ...property, status: e.target.value })}
-      >
-        <option value="Available">Available</option>
-        <option value="Sold">Sold</option>
-      </select>
+      <div className="grid gap-3 md:grid-cols-2">
+        <select
+          className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3 md:mb-0"
+          value={property.status || "Available"}
+          onChange={(e) => setProperty({ ...property, status: e.target.value })}
+        >
+          <option value="Available">Available</option>
+          <option value="Sold">Sold</option>
+        </select>
 
-      <select
-        className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3"
-        value={property.type || "Residential"}
-        onChange={(e) => setProperty({ ...property, type: e.target.value })}
-      >
-        <option value="Residential">Residential</option>
-        <option value="Commercial">Commercial</option>
-      </select>
+        <select
+          className="border border-slate-200 rounded-lg p-2.5 block w-full"
+          value={property.type || "Flat"}
+          onChange={(e) =>
+            setProperty((current) => ({
+              ...current,
+              type: e.target.value,
+              bhk: e.target.value === "Commercial" ? "" : current.bhk,
+            }))
+          }
+        >
+          <option value="Flat">Flat</option>
+          <option value="Residential">Residential</option>
+          <option value="Villa">Villa</option>
+          <option value="Commercial">Commercial</option>
+        </select>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2 my-3">
+        <input
+          type="number"
+          className="border border-slate-200 rounded-lg p-2.5 block w-full"
+          value={property.bhk || ""}
+          disabled={property.type === "Commercial"}
+          onChange={(e) => setProperty({ ...property, bhk: e.target.value })}
+          placeholder="BHK"
+        />
+
+        <input
+          type="number"
+          className="border border-slate-200 rounded-lg p-2.5 block w-full"
+          value={property.areaSqft || ""}
+          onChange={(e) => setProperty({ ...property, areaSqft: e.target.value })}
+          placeholder="Area in sq ft"
+        />
+      </div>
 
       <textarea
         className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3 min-h-28"
         value={property.description || ""}
         onChange={(e) => setProperty({ ...property, description: e.target.value })}
         placeholder="Description"
+      />
+
+      <textarea
+        className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3 min-h-24"
+        value={amenitiesInput}
+        onChange={(e) => setAmenitiesInput(e.target.value)}
+        placeholder="Amenities (comma separated)"
       />
 
       <input

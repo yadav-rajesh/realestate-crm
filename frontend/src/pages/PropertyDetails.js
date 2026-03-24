@@ -84,6 +84,11 @@ export default function PropertyDetails() {
       .then(() => {
         setRequestStatus("Request submitted successfully.");
         setReqMessage("");
+        setProperty((current) =>
+          current
+            ? { ...current, inquiryCount: Number(current.inquiryCount || 0) + 1 }
+            : current
+        );
       })
       .catch((err) => {
         setRequestStatus(err?.response?.data?.message || "Failed to submit request.");
@@ -160,7 +165,7 @@ export default function PropertyDetails() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">BHK</p>
                 <p className="mt-2 text-lg font-bold text-slate-900">{getBhkLabel(property)}</p>
@@ -176,6 +181,14 @@ export default function PropertyDetails() {
               <div className="rounded-2xl bg-slate-50 p-4">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Status</p>
                 <p className="mt-2 text-lg font-bold text-slate-900">{property.status}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Views</p>
+                <p className="mt-2 text-lg font-bold text-slate-900">{property.views ?? 0}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Inquiries</p>
+                <p className="mt-2 text-lg font-bold text-slate-900">{property.inquiryCount ?? 0}</p>
               </div>
             </div>
           </div>
@@ -240,6 +253,14 @@ export default function PropertyDetails() {
                 <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <span>Area</span>
                   <span className="font-semibold text-slate-900">{getAreaLabel(property)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <span>Views</span>
+                  <span className="font-semibold text-slate-900">{property.views ?? 0}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <span>Inquiries</span>
+                  <span className="font-semibold text-slate-900">{property.inquiryCount ?? 0}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span>Contact Owner</span>
@@ -439,3 +460,4 @@ export default function PropertyDetails() {
     </div>
   );
 }
+

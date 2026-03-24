@@ -37,8 +37,10 @@ public class PropertyController {
     }
 
     @GetMapping("/{id}")
-    public PropertyResponse getById(@PathVariable Long id){
-        return service.getById(id);
+    public PropertyResponse getById(
+            @PathVariable Long id,
+            @RequestParam(defaultValue="true") boolean incrementView){
+        return service.getById(id, incrementView);
     }
 
     @GetMapping("/search")

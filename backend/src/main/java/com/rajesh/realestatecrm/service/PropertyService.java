@@ -8,6 +8,7 @@ import com.rajesh.realestatecrm.exception.UnauthorizedException;
 import com.rajesh.realestatecrm.model.Property;
 import com.rajesh.realestatecrm.model.PropertyImage;
 import com.rajesh.realestatecrm.model.User;
+import com.rajesh.realestatecrm.repository.ContactRequestRepository;
 import com.rajesh.realestatecrm.repository.PropertyRepository;
 import com.rajesh.realestatecrm.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,46 +31,45 @@ public class PropertyService {
 
     private final PropertyRepository repository;
     private final UserRepository userRepository;
+    private final ContactRequestRepository contactRequestRepository;
 
     public PropertyResponse save(PropertyRequest request) {
         User owner = getCurrentUser();
 
         Property property = new Property();
-        property.setTitle(request.getTitle());
-        property.setLocation(request.getLocation());
-        property.setPrice(request.getPrice());
-        property.setStatus(request.getStatus());
-        property.setType(request.getType());
-        property.setDescription(request.getDescription());
+        applyRequest(property, request);
         property.setOwner(owner);
+        property.setViews(0);
 
-        return toResponse(repository.save(property));
+        return toResponse(repository.save(property), 0);
     }
 
     public Page<PropertyResponse> getAll(Pageable pageable){
-        return repository.findAll(pageable).map(this::toResponse);
+        return toResponsePage(repository.findAll(pageable));
     }
 
-    public PropertyResponse getById(Long id){
-        return toResponse(getEntityById(id));
+    public PropertyResponse getById(Long id, boolean incrementView){
+        Property property = getEntityById(id);
+
+        if (incrementView) {
+            property.setViews(property.getViews() + 1);
+            property = repository.save(property);
+        }
+
+        return toResponse(property, contactRequestRepository.countByPropertyId(property.getId()));
     }
 
     public Page<PropertyResponse> searchByLocation(String location, Pageable pageable) {
-        return repository.findByLocationContainingIgnoreCase(location, pageable).map(this::toResponse);
+        return toResponsePage(repository.findByLocationContainingIgnoreCase(location, pageable));
     }
 
     public PropertyResponse update(Long id, PropertyRequest request){
 
         Property existing = getEntityById(id);
 
-        existing.setTitle(request.getTitle());
-        existing.setLocation(request.getLocation());
-        existing.setPrice(request.getPrice());
-        existing.setType(request.getType());
-        existing.setStatus(request.getStatus());
-        existing.setDescription(request.getDescription());
+        applyRequest(existing, request);
 
-        return toResponse(repository.save(existing));
+        return toResponse(repository.save(existing), contactRequestRepository.countByPropertyId(existing.getId()));
     }
 
     public PropertyResponse addImage(Long id, String imageName) {
@@ -81,7 +84,7 @@ public class PropertyService {
         image.setProperty(property);
         property.getImages().add(image);
 
-        return toResponse(repository.save(property));
+        return toResponse(repository.save(property), contactRequestRepository.countByPropertyId(property.getId()));
     }
 
     public void delete(Long id){
@@ -105,7 +108,69 @@ public class PropertyService {
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
     }
 
-    private PropertyResponse toResponse(Property property) {
+    private void applyRequest(Property property, PropertyRequest request) {
+        property.setTitle(request.getTitle());
+        property.setLocation(request.getLocation());
+        property.setPrice(request.getPrice());
+        property.setStatus(request.getStatus());
+        property.setType(request.getType());
+        property.setDescription(request.getDescription());
+        property.setBhk(request.getBhk());
+        property.setAreaSqft(request.getAreaSqft());
+        property.setAmenities(normalizeAmenities(request.getAmenities()));
+    }
+
+    private List<String> normalizeAmenities(List<String> amenities) {
+        if (amenities == null) {
+            return List.of();
+        }
+
+        return amenities.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .distinct()
+                .limit(12)
+                .collect(Collectors.toList());
+    }
+
+    private Page<PropertyResponse> toResponsePage(Page<Property> page) {
+        Map<Long, Long> inquiryCounts = getInquiryCounts(page.getContent());
+        List<PropertyResponse> content = page.getContent().stream()
+                .map(property -> toResponse(property, inquiryCounts.getOrDefault(property.getId(), 0L)))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(content, page.getPageable(), page.getTotalElements());
+    }
+
+    private Map<Long, Long> getInquiryCounts(List<Property> properties) {
+        List<Long> propertyIds = properties.stream()
+                .map(Property::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (propertyIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, Long> counts = new LinkedHashMap<>();
+        for (Object[] row : contactRequestRepository.countByPropertyIds(propertyIds)) {
+            if (row == null || row.length < 2) {
+                continue;
+            }
+
+            Long propertyId = row[0] instanceof Number ? ((Number) row[0]).longValue() : null;
+            long inquiryCount = row[1] instanceof Number ? ((Number) row[1]).longValue() : 0;
+
+            if (propertyId != null) {
+                counts.put(propertyId, inquiryCount);
+            }
+        }
+
+        return counts;
+    }
+
+    private PropertyResponse toResponse(Property property, long inquiryCount) {
         User owner = property.getOwner();
         String ownerName = null;
         String ownerPhone = null;
@@ -131,6 +196,11 @@ public class PropertyService {
                 .status(property.getStatus())
                 .type(property.getType())
                 .description(property.getDescription())
+                .bhk(property.getBhk())
+                .areaSqft(property.getAreaSqft())
+                .amenities(property.getAmenities() == null ? List.of() : property.getAmenities())
+                .views(property.getViews())
+                .inquiryCount(inquiryCount)
                 .ownerId(ownerId)
                 .ownerName(ownerName)
                 .phone(ownerPhone)

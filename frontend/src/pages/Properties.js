@@ -4,7 +4,7 @@ import API from "../api/axiosConfig";
 import PropertyCard from "../components/PropertyCard";
 import Pagination from "../components/Pagination";
 import Loader from "../components/Loader";
-import { getBhkLabel } from "../utils/propertyPresentation";
+import { getBhkValue } from "../utils/propertyPresentation";
 
 export default function Properties() {
   const [searchParams] = useSearchParams();
@@ -68,14 +68,18 @@ export default function Properties() {
         const propertyType = (property.type || "").toLowerCase();
         const propertyStatus = (property.status || "").toLowerCase();
         const price = Number(property.price || 0);
-        const propertyBhk = getBhkLabel(property);
+        const propertyBhkValue = getBhkValue(property);
 
         const matchesSearch = !searchText || lookupText.includes(searchText);
         const matchesType = typeFilter === "ALL" || propertyType === typeFilter.toLowerCase();
         const matchesStatus = statusFilter === "ALL" || propertyStatus === statusFilter.toLowerCase();
         const matchesMin = minPrice === "" || price >= Number(minPrice);
         const matchesMax = maxPrice === "" || price <= Number(maxPrice);
-        const matchesBhk = bhkFilter === "ALL" || propertyBhk.startsWith(String(bhkFilter));
+        const matchesBhk =
+          bhkFilter === "ALL" ||
+          (bhkFilter === "4"
+            ? Number(propertyBhkValue || 0) >= 4
+            : Number(propertyBhkValue || 0) === Number(bhkFilter));
         const matchesMode =
           modeFilter === "COMMERCIAL"
             ? propertyType === "commercial"
@@ -345,3 +349,5 @@ export default function Properties() {
     </div>
   );
 }
+
+

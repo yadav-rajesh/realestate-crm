@@ -19,6 +19,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
     @Query("SELECT COUNT(DISTINCT p.location) FROM Property p")
     Long countDistinctLocations();
 
+    @Query("SELECT COALESCE(SUM(p.views), 0) FROM Property p")
+    Long sumViews();
+
     Page<Property> findByType(String type, Pageable pageable);
 
     List<Property> findByOwnerUsername(String username);

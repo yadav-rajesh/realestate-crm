@@ -27,6 +27,12 @@ public class Property {
 
     private String description;
 
+    private Integer bhk;
+
+    private Integer areaSqft;
+
+    private long views;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "owner_id")
     private User owner;
@@ -34,4 +40,9 @@ public class Property {
     @JsonManagedReference
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
     private List<PropertyImage> images;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "property_amenities", joinColumns = @JoinColumn(name = "property_id"))
+    @Column(name = "amenity")
+    private List<String> amenities;
 }

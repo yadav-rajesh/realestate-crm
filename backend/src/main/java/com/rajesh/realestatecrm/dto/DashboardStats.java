@@ -13,4 +13,8 @@ public class DashboardStats {
 
     private long totalLocations;
 
+    private long totalInquiries;
+
+    private long totalViews;
+
 }

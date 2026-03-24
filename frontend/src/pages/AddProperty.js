@@ -7,13 +7,22 @@ export default function AddProperty() {
     location: "",
     price: "",
     status: "Available",
-    type: "Residential",
+    type: "Flat",
     description: "",
+    bhk: "",
+    areaSqft: "",
   });
+  const [amenitiesInput, setAmenitiesInput] = useState("");
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const parseAmenities = () =>
+    amenitiesInput
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
 
   const save = async () => {
     try {
@@ -24,6 +33,9 @@ export default function AddProperty() {
       const payload = {
         ...property,
         price: Number(property.price || 0),
+        bhk: property.type === "Commercial" ? null : Number(property.bhk || 0) || null,
+        areaSqft: Number(property.areaSqft || 0) || null,
+        amenities: parseAmenities(),
       };
 
       const res = await API.post("/api/properties", payload);
@@ -40,9 +52,12 @@ export default function AddProperty() {
         location: "",
         price: "",
         status: "Available",
-        type: "Residential",
+        type: "Flat",
         description: "",
+        bhk: "",
+        areaSqft: "",
       });
+      setAmenitiesInput("");
       setFile(null);
     } catch {
       setError("Failed to add property.");
@@ -80,29 +95,65 @@ export default function AddProperty() {
         onChange={(e) => setProperty({ ...property, price: e.target.value })}
       />
 
-      <select
-        className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3"
-        value={property.status}
-        onChange={(e) => setProperty({ ...property, status: e.target.value })}
-      >
-        <option value="Available">Available</option>
-        <option value="Sold">Sold</option>
-      </select>
+      <div className="grid gap-3 md:grid-cols-2">
+        <select
+          className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3 md:mb-0"
+          value={property.status}
+          onChange={(e) => setProperty({ ...property, status: e.target.value })}
+        >
+          <option value="Available">Available</option>
+          <option value="Sold">Sold</option>
+        </select>
 
-      <select
-        className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3"
-        value={property.type}
-        onChange={(e) => setProperty({ ...property, type: e.target.value })}
-      >
-        <option value="Residential">Residential</option>
-        <option value="Commercial">Commercial</option>
-      </select>
+        <select
+          className="border border-slate-200 rounded-lg p-2.5 block w-full"
+          value={property.type}
+          onChange={(e) =>
+            setProperty((current) => ({
+              ...current,
+              type: e.target.value,
+              bhk: e.target.value === "Commercial" ? "" : current.bhk,
+            }))
+          }
+        >
+          <option value="Flat">Flat</option>
+          <option value="Residential">Residential</option>
+          <option value="Villa">Villa</option>
+          <option value="Commercial">Commercial</option>
+        </select>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2 my-3">
+        <input
+          type="number"
+          className="border border-slate-200 rounded-lg p-2.5 block w-full"
+          placeholder="BHK"
+          value={property.bhk}
+          disabled={property.type === "Commercial"}
+          onChange={(e) => setProperty({ ...property, bhk: e.target.value })}
+        />
+
+        <input
+          type="number"
+          className="border border-slate-200 rounded-lg p-2.5 block w-full"
+          placeholder="Area in sq ft"
+          value={property.areaSqft}
+          onChange={(e) => setProperty({ ...property, areaSqft: e.target.value })}
+        />
+      </div>
 
       <textarea
         className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3 min-h-28"
         placeholder="Description"
         value={property.description}
         onChange={(e) => setProperty({ ...property, description: e.target.value })}
+      />
+
+      <textarea
+        className="border border-slate-200 rounded-lg p-2.5 block w-full mb-3 min-h-24"
+        placeholder="Amenities (comma separated)"
+        value={amenitiesInput}
+        onChange={(e) => setAmenitiesInput(e.target.value)}
       />
 
       <input
